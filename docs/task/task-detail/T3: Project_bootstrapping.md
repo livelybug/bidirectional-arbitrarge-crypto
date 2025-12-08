@@ -136,40 +136,16 @@
 
 - [P0] T3-02: Initialize Nest project (pnpm)
   - Steps:
-    - Preferred (pin CLI + correct flag):
-      `pnpm dlx @nestjs/cli@latest new cross-chain-arb --package-manager pnpm`
+    - Preferred If using global CLI:
+      `nest new cross-chain-arb --package-manager pnpm`
     - Alternative (short flag):
       `pnpm dlx @nestjs/cli@latest new cross-chain-arb -p pnpm`
-    - If using global CLI:
-      `nest new cross-chain-arb --package-manager pnpm`
+    - (pin CLI + correct flag):
+      `pnpm dlx @nestjs/cli@latest new cross-chain-arb --package-manager pnpm`
     - Quick check (optional):
       `pnpm dlx @nestjs/cli@latest --version` to ensure a recent CLI before running.
   - Deps: T3-01
   - Done when: Base Nest app builds and runs.
-
-  ### Note: pnpm dlx vs. nest new
-  - Option A: `pnpm dlx @nestjs/cli new <name> --packageManager pnpm`
-    - Pros:
-      - Uses a one-off CLI version (no global install), avoids global drift.
-      - Respects pnpm workspace/store and lockfile from the start.
-      - Cleaner CI/dev parity (same command works in ephemeral envs).
-    - Cons:
-      - Slightly longer first run due to transient download.
-      - Requires pnpm availability on the machine.
-  - Option B: `nest new <name>` (global Nest CLI)
-    - Pros:
-      - Fast subsequent runs; CLI is immediately available.
-      - Commonly documented; familiar for many devs.
-    - Cons:
-      - Global CLI can drift from project expectations (version mismatch).
-      - Defaults to npm unless overridden; extra step to ensure pnpm.
-      - Harder to guarantee reproducibility across CI/dev machines.
-        - Global installs vary per machine; CLI version and defaults may differ.
-        - Requires extra bootstrapping to pin CLI version and package manager in CI.
-        - Templates change across CLI versions, producing different scaffolds over time.
-
-  Recommendation for this repo:
-  - Prefer Option A to ensure reproducible, pnpm-first setup without global dependencies.
 
 - [P0] T3-03: Align repo structure and folders
   - Steps: Create folders `/src/orchestrator`, `/src/price_monitor`, `/src/dex`, `/src/bridge`, `/src/risk_control`, `/src/utils`; add `/logs/`, `/wallets/` (gitignored).
