@@ -4,6 +4,7 @@
 
 ### 1.1. Product Overview
 The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system designed to capitalize on price discrepancies of specific crypto assets across different decentralized exchanges (DEXs) on various blockchain networks. It performs bi-directional arbitrage by monitoring prices, calculating potential profits, and executing trades when profitable opportunities are identified, while incorporating risk management features.
+- The arbitrage loop executes on a 1-second cadence to capture near real-time price discrepancies.
 
 ## 2. Functional Requirements
 
@@ -12,6 +13,7 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 #### 2.1.1. Price Monitoring
 - The system must continuously monitor and fetch the prices of specified token pairs (`TokenA/USDT`) from two different DEXs (DEX J and DEX K) on their respective blockchains.
 - Price fetching should be near real-time to ensure accuracy.
+- Loop interval: 1 second (configurable, default 1000 ms).
 
 #### 2.1.2. Profit Calculation
 - The system must calculate the potential profit for both forward and backward arbitrage loops.
@@ -19,6 +21,7 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
   - `profit_forward (%) = (price_K / price_J - 1) * 100 - Cross_Chain_Fees`
 - **Backward Arbitrage (DEX K to DEX J):**
   - `profit_backward (%) = (price_J / price_K - 1) * 100 - Cross_Chain_Fees`
+- Profit calculations must subtract the configured total fee rate (see 2.1.3) before threshold comparison.
 
 #### 2.1.3. Fee Calculation
 - The system must account for all associated transaction costs when calculating profitability. The total estimated cross-chain fees are between **1.2% and 1.8%**.
@@ -28,6 +31,7 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
         - Stargate: 1-2 USDT
         - Hop / Synapse: 0.3% - 0.5%
     - **Gas Fees:** Approximately 0.3-0.6 USDT for transactions on Arbitrum and Base.
+- A configurable “total fee rate” parameter must be used in profit calculations. Recommended effective threshold range: 1.2%–1.8%.
 
 #### 2.1.4. Trade Execution
 - The system shall trigger an arbitrage trade only if the calculated profit margin meets or exceeds a predefined threshold.
@@ -37,6 +41,15 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
     2. Bridge Token A from its native chain to the chain of DEX K.
     3. Sell Token A for USDT on DEX K.
     4. Bridge USDT back to the original chain.
+- Execution amount:
+    - Default: 200USDT execution using the chain’s “current available USDT”.
+    - Configurable caps:
+        - Optional single-transaction cap (% of total funds).
+        - Optional maximum total exposure cap (% of total funds).
+    - Post-trade fund cycling:
+        - Bridge back 90%–95% of USDT to the originating chain to maintain bilateral balance.
+        - Retain 5%–10% locally as realized profit.
+    - Gas reserve: retain 3% of each trade’s profit on the destination chain as gas buffer for subsequent operations.
 
 ### 2.2. Supported Platforms
 
@@ -70,16 +83,26 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 #### 2.4.2. Position Sizing
 - **Single Transaction Limit:** The value of any single arbitrage trade must not exceed **5% - 10%** of the total available funds.
 - **Maximum Position Limit:** The total value of all open positions at any given time must not exceed **90% - 95%** of the total funds.
+- Position sizing must support full-amount execution mode. When enabled:
+    - The bot may use all available USDT on the entry chain, subject to optional configurable caps:
+        - **Single Transaction Cap (optional):** e.g., 5%–100% of total funds.
+        - **Maximum Exposure Cap (optional):** e.g., 90%–100% of total funds.
 
 #### 2.4.3. Slippage Control
 - The system must allow for a configurable maximum slippage percentage for each DEX trade.
 - The default maximum slippage for a single transaction is capped at **3%**. If a trade is predicted to exceed this, it should not be executed.
+- Default slippage for swaps should also include a reserve (e.g., 1%) for execution safety within quotes.
+
+#### 2.4.4. Operational Reserves
+- The system must retain **3%** of realized profit per cycle on the destination chain for future gas needs.
+- The system must log and reconcile bridge fees and final settled balances post-bridge to ensure accurate PnL.
 
 ## 3. System Architecture & Implementation
 
 ### 3.1. High-Level Structure
 - The system will be developed in TypeScript, converting the logic from an existing Python simulation.
 - The project will be structured into modular components as outlined below.
+- Reference implementation exists in Python; TypeScript is the target production language. Behavioral parity with the Python logic is required.
 
 ### 3.2. Project File Structure
 ```
@@ -106,9 +129,11 @@ cross_chain_arb/
 
 ### 4.1. Performance
 - The bot must be able to fetch prices and execute trades with minimal latency to effectively capture arbitrage opportunities.
+- Respect API rate limits; prefer DEX quote APIs over scraping. Implement batching and concurrency control where applicable.
 
 ### 4.2. Reliability
 - The bot should run continuously with high availability. It must handle network errors and API failures gracefully, with appropriate retry mechanisms.
+- Add retries and backoff for bridge operations; detect and log bridge settlement completion before PnL attribution.
 
 ### 4.3. Security
 - Private keys and sensitive API keys must be stored securely and not exposed in the codebase.
@@ -119,3 +144,4 @@ cross_chain_arb/
     - Executed trades (buys, sells, bridges).
     - Errors and exceptions.
     - Risk management triggers (e.g., stop-loss activation).
+    - Include bridge initiation/completion, amounts bridged back (90%–95%), and retained gas reserve (3% of profit).
