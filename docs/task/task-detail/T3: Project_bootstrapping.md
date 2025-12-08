@@ -139,9 +139,9 @@
     - Preferred If using global CLI:
       `nest new cross-chain-arb --package-manager pnpm`
     - Alternative (short flag):
-      `pnpm dlx @nestjs/cli@latest new cross-chain-arb -p pnpm`
+      `pnpm dlx @nestjs/cli@11.0.14 new cross-chain-arb --package-manager pnpm`
     - (pin CLI + correct flag):
-      `pnpm dlx @nestjs/cli@latest new cross-chain-arb --package-manager pnpm`
+      `pnpm dlx @nestjs/cli@11.0.14 new cross-chain-arb -p pnpm`
     - Quick check (optional):
       `pnpm dlx @nestjs/cli@latest --version` to ensure a recent CLI before running.
   - Deps: T3-01
@@ -165,7 +165,7 @@
 - [P0] T3-06: Package scripts
   - Steps: Add scripts for `build`, `start`, `start:dev`, `lint`, `format`, `test`, `test:cov`, `simulate`.
   - Deps: T3-02
-  - Done when: `pnpm build` and `pnpm start:dev` work.
+  - Done when: `nest build` and `nest start --watch` work.
 
 - [P0] T3-07: Config loader (YAML + env)
   - Steps: Implement `ConfigService` to load `.env` and `config.yaml`; validate with schema (thresholds, fees, risk, ops.loopIntervalMs).
