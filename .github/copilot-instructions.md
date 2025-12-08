@@ -6,7 +6,7 @@ applyTo: "**"
 * Please think deeply and think twice.
 
 ## Clarification Phase
-Before producing your main answer, perform a Clarification Phase if any part of my request is ambiguous or missing clarifications.
+Before proceed with your main answer, perform a Clarification Phase if any part of my request is ambiguous or missing clarifications. Only proceed once all requirements are confirmed to be clear.
 
 ### Clarification Rules 
 1. **Numbering**

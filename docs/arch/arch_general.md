@@ -1,7 +1,7 @@
 # Solution Architecture: Cross-Chain Bi-Directional Arbitrage Bot (v1.0)
 
 ## 1. Overview
-- Purpose: Execute bi-directional cross-chain arbitrage loops for Token/USDT across two DEX/chain venues.
+- Purpose: Execute bi-directional cross-chain arbitrage loops for TokenA/USDT across two DEX/chain venues.
 - Target stack: TypeScript (prod), parity with Python behavior (reference).
 - Core domains: price monitoring, DEX execution, cross-chain bridging, risk control, wallets, logging/metrics.
 
