@@ -31,10 +31,20 @@
      - Initialize TypeScript project; add package.json, linting, logging infra.
      - Deliverable: Repo scaffold; build passes.
      - Success: CI green.
+   - T3b: Pair & route discovery
+     - Implement ConfigService-backed discovery of trading pairs and arbitrage routes at startup using:
+       - Global base/quote token lists from `tokens` config.
+       - Per-chain `tokenList` (token inventories) and `dexList` (supported DEXes) from `chains` config.
+     - Build in-memory `TradingPairConfig` + route entries `(chainM, dexJ) → (chainN, dexK)` for all token pairs that appear on at least two venues (same-chain or cross-chain).
+     - Enforce fast-fail on misconfigured tokens (base/quote tokens missing from all chain `tokenList`s).
+     - Deliverable: Discovery service/module + tests; documented contract for Orchestrator and PriceMonitor.
+     - Success: Deterministic list of eligible pairs/routes computed at startup; invalid config surfaces as clear errors.
    - T4: Price monitoring
-     - Implement API-based quotes for TokenA/USDT across DEX J/K; 1s loop.
-     - Deliverable: price_monitor.ts with dual-chain fetch + rate-limit handling.
-     - Success: Stable price feed, <300ms avg fetch per chain.
+     - Implement API-based quotes for dynamically discovered trading pairs (base/quote) across configured DEX J/K (same-chain or cross-chain).
+     - Integrate with discovery outputs: `PriceMonitor` consumes `TradingPairConfig` to fetch `priceM` and `priceN` per pair/route.
+     - Maintain 1s loop semantics for price fetching while allowing multiple pairs/routes to be evaluated per tick.
+     - Deliverable: price_monitor.ts with dual-venue fetch per pair + rate-limit handling.
+     - Success: Stable price feed, <300ms avg fetch per chain/DEX; supports multiple pairs concurrently.
    - T5: DEX integrations
      - Uniswap V3 swaps (buy/sell with slippage cap); extend for Velodrome.
      - Deliverable: dex/uniswap_v3.ts, dex/velodrome.ts with unit tests.
@@ -48,13 +58,22 @@
      - Deliverable: risk_control.ts.
      - Success: Correct gatekeeping across scenarios; caps enforce limits.
    - T8: Main orchestrator
-     - Implement 1s loop, forward/backward execution, 90–95% rebalance, 3% gas reserve.
-     - Deliverable: src/main.ts.
-     - Success: End-to-end dry-run succeeds; correct fund cycling.
+     - Implement 1s loop that:
+       - At startup, pulls discovered `TradingPairConfig`+route entries from discovery service.
+       - On each tick, iterates over all candidate pairs/routes, fetches prices via PriceMonitor, and evaluates forward/backward profitability.
+       - Delegates to RiskManager with per-pair `PairRuntimeState` and global state; collects candidate `ExecutionPlan`s.
+       - Selects at most one plan per tick (e.g., highest expected profit that passes risk checks) to simplify exposure and funding races.
+       - Executes the chosen plan, including 90–95% rebalance and 3% gas reserve behavior.
+     - Deliverable: src/main.ts orchestrator wiring + integration with discovery, price_monitor, dex, bridge, risk_control.
+     - Success: End-to-end dry-run succeeds; correct fund cycling across multiple pairs/routes; at most one execution per tick.
    - T9: Wallet & config utilities
-     - Secure wallet handling; config.yaml parsing; logger.
-     - Deliverable: utils/wallet.ts, utils/logger.ts; config.yaml.
-     - Success: Secrets not in code; logs structured and complete.
+     - Secure wallet handling; config.yaml parsing with Zod-backed schema; logger.
+     - Implement typed config accessors for:
+       - Global `tokens` (base/quote lists) and per-chain `tokenList`/`dexList`.
+       - Bridge, risk, fees, ops, logging, wallets.
+     - Ensure config schema matches `arch_general.md` and `schema_validation.md` (no static trading pairs; discovery is runtime-only).
+     - Deliverable: utils/wallet.ts, utils/logger.ts; config.yaml; config.types.ts + config.schema.ts.
+     - Success: Secrets not in code; logs structured and complete; `config.yaml` validates and supports dynamic pair/route discovery.
 
    2.3. Testing & Validation
    - T10: Unit & integration tests
@@ -111,4 +130,6 @@
    - Post-Deployment Optimization: Demonstrated profit capture with controlled risk; expanded chain/DEX support without regressions.
 
 ## Todos
-*  Orchestrator/PriceMonitor can consider multiple candidate DEX pairs (e.g. J1–K1, J2–K1) for the same token pair in one tick.
+*  Implement and harden the discovery service that builds `TradingPairConfig`+route entries from `tokens` + per-chain `tokenList`/`dexList`, including deterministic ordering and clear failure modes for misconfigurations.
+*  Extend Orchestrator/PriceMonitor to handle multiple candidate routes per token pair (e.g. (J1–K1), (J2–K1), (J1–K2)) and select at most one execution plan per tick based on expected profit and risk constraints.
+*  Add per-pair risk/fee override support (optional fields on `TradingPairConfig`) and ensure RiskManager respects both global and per-pair settings.
