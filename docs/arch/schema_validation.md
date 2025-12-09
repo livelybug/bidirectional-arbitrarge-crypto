@@ -4,8 +4,16 @@
   - File: implement schemas in `src/utils/config/config.schema.ts` alongside `config.types.ts`.
   - Structure:
     - Define granular schemas per domain, then compose:
-      - `chainConfigSchema` → validates `rpc`, `usdt`, `tokenA`, `dex` as non-empty strings.
-      - `chainsConfigSchema` → `z.record(z.enum(ChainIds), chainConfigSchema)` or `z.object({ arbitrum: ..., base: ... })` aligned with `ChainId`.
+      - `tokensConfigSchema` → validates global base/quote token symbol lists:
+        - `base`: non-empty array of non-empty strings (base token symbols like `WIF`, `PEPE`).
+        - `quote`: non-empty array of non-empty strings (quote token symbols like `USDT`, `USDC`).
+      - `chainConfigSchema` → per-chain structure:
+        - `rpc`: non-empty string.
+        - `tokenList`: array of `{ symbol, address }` where:
+          - `symbol`: non-empty string.
+          - `address`: non-empty string that starts with `0x`.
+        - `dexList`: array of `{ key, type }` where both `key` and `type` are non-empty strings (e.g. `key: 'uniswap_v3'`, `type: 'uniswap_v3'`).
+      - `chainsConfigSchema` → `z.record(z.enum(ChainIds), chainConfigSchema)` aligned with `ChainId`.
       - `bridgeStargateSchema` → `router`, `lzEndpoint` are non-empty strings that start with `0x`.
       - `bridgeConfigSchema` → `provider` is literal `'stargate'`; `stargate` is `bridgeStargateSchema`.
       - `positionCapsSchema` →
@@ -34,7 +42,7 @@
       - `walletsConfigSchema` →
         - `keystorePath`: non-empty string.
         - `address`: string that starts with `0x` and length 42 (basic EVM address check).
-    - Compose the root schema as `appConfigSchema` with shape `{ chains, bridge, risk, fees, ops, logging, wallets }`.
+    - Compose the root schema as `appConfigSchema` with shape `{ tokens, chains, bridge, risk, fees, ops, logging, wallets }`.
   - Typing:
     - Export `appConfigSchema` and sub-schemas; use `z.infer<typeof appConfigSchema>` to assert compatibility with `AppConfig` (from `config.types.ts`).
     - Optionally add a compile-time helper (e.g. `type _AppConfigCheck = AssertEqual<AppConfig, z.infer<typeof appConfigSchema>>`) to keep types in sync.
