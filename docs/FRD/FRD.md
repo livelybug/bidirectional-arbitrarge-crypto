@@ -11,7 +11,12 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 ### 2.1. Core Arbitrage Logic
 
 #### 2.1.1. Price Monitoring
-- The system must continuously monitor and fetch the prices of specified token pairs (`TokenA/USDT`) from two different DEXs (DEX J and DEX K) on their respective blockchains.
+- The system must continuously monitor and fetch the prices of specified token pairs (e.g., `TokenA/USDT`, `TokenB/USDT`, `TokenA/USDC`, `TokenB/USDC`) from configured DEXs (e.g., DEX J, DEX K) that may reside on the same blockchain (same-chain DEX-to-DEX arbitrage) or on different blockchains (cross-chain arbitrage).
+- The set of token pairs and arbitrage routes is not hard-coded in configuration; instead, the system derives them at startup from:
+    - A global list of base tokens (e.g., meme tokens like WIF, PEPE, BRETT),
+    - A global list of quote tokens (e.g., USDT, USDC), and
+    - Per-chain configuration describing which tokens and DEXes are available on each chain.
+- Only token pairs that are listed on at least two distinct venues (same-chain or cross-chain combinations of `(Chain, DEX)`) are considered eligible for arbitrage.
 - Price fetching should be near real-time to ensure accuracy.
 - Loop interval: 1 second (configurable, default 1000 ms).
 
@@ -52,6 +57,9 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
     - Gas reserve: retain 3% of each trade’s profit on the destination chain as gas buffer for subsequent operations.
 
 ### 2.2. Supported Platforms
+
+- Each supported chain (e.g., Arbitrum, Base, Ethereum, Polygon) may host multiple supported DEXes (e.g., Uniswap V3, Camelot V3, Velodrome V2, QuickSwap, SushiSwap).
+- Arbitrage routes are defined as ordered pairs of venues `(Chain 1 (M), DEX J) → (Chain 2 (N), DEX K)`, where `Chain 1` and `Chain 2` may be the same or different.
 
 | Chain 1 (M) | DEX J          | Chain 2 (N) | DEX K          | Cross-Chain Bridge      | Status      |
 |-------------|----------------|-------------|----------------|-------------------------|-------------|

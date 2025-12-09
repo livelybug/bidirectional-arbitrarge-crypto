@@ -109,3 +109,6 @@
    - Testing & Validation: ≥80% coverage; backtests consistent with expected PnL; stable 24h soak.
    - Deployment & Operations: One-click deploy; configurable per environment; logs enable root-cause analysis.
    - Post-Deployment Optimization: Demonstrated profit capture with controlled risk; expanded chain/DEX support without regressions.
+
+## Todos
+*  Orchestrator/PriceMonitor can consider multiple candidate DEX pairs (e.g. J1–K1, J2–K1) for the same token pair in one tick.
