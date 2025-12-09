@@ -276,3 +276,182 @@ Milestone grouping:
 - M2 (Bootable services): T3-07–T3-13
 - M3 (Quality gates): T3-15–T3-17
 - M4 (Ops niceties): T3-18–T3-25
+
+## Detail Sub Tasks
+### [P0] T3-07: Config loader (YAML + env)
+#### Implemetation Plan
+Implementation plan for a typed, validated config loader using `.env` and `config.yaml`, aligned with `arch_general.md`.
+
+1. Goals
+  - Centralize runtime configuration (chains, fees, risk, ops, logging, wallets) in `config.yaml` plus sensitive values in `.env`.
+  - Provide a typed `ConfigService` (Nest provider) that other modules use instead of reading env/files directly.
+  - Validate configuration on startup; fail fast with clear errors if invalid or missing.
+
+2. Files & Locations
+  - `config.yaml` at project root (already planned in repo structure).
+  - `.env` at project root (ignored by git, `.env.example` committed).
+  - `src/utils/config` (or `src/utils/config-loader`):
+    - `config.types.ts` – TypeScript interfaces mirroring the schema from `arch_general.md` (chains, bridge, risk, fees, ops, logging, wallets).
+    - `config.schema.ts` – Validation schema (e.g., using `zod` or `joi`) for both env and YAML content.
+    - `config.service.ts` – Nest injectable `ConfigService` that loads, merges, validates, and exposes typed getters.
+
+3. Dependencies
+  - Add libraries (implementation choice, one of):
+    - YAML parsing: `yaml`.
+    - Validation: `zod` (preferred) or `joi`.
+    - Env loading: `dotenv` (or use Nest ConfigModule later, but start simple).
+  - Update `package.json` devDependencies if needed.
+
+4. Config Schema Design (from `arch_general.md`)
+  - Mirror the indicative schema:
+    - `chains[chainId].rpc`, `usdt`, `tokenA`, `dex`.
+    - `bridge.provider`, `bridge.stargate.router`, `bridge.stargate.lzEndpoint`.
+    - `risk.minProfitRateBps`, `risk.stopLossPct`, `risk.slippageBps`, `risk.positionCaps.fullAmountMode`, `singleTxCapPct`, `maxExposurePct`.
+    - `fees.dexFeeBpsPerSwap`, `fees.bridgeFlatUSD`, `fees.gasUSD`, `fees.slippageReserveBps`, `fees.totalFeeRateBps`.
+    - `ops.loopIntervalMs`, `ops.bridgeBackPct`, `ops.gasReservePctOfProfit`.
+    - `logging.level`, `logging.json`.
+    - `wallets.keystorePath`, `wallets.address` (private key only via env/keystore, not YAML).
+  - Env-only values (from `.env`): RPC endpoints (if not in YAML), private key, API keys, optional overrides (e.g., `MIN_PROFIT_RATE_BPS`, `LOOP_INTERVAL_MS`).
+
+5. Load & Merge Strategy
+  - Load order at startup (inside `ConfigService`):
+    1. Call `dotenv.config()` to populate `process.env` from `.env`.
+    2. Read `config.yaml` synchronously on bootstrap (using `fs` + `yaml.parse`).
+    3. Construct a raw config object from YAML.
+    4. Overlay env-driven overrides:
+      - Example: if `process.env.MIN_PROFIT_RATE_BPS` is set, override `risk.minProfitRateBps`.
+      - Example: if `process.env.ARBITRUM_RPC` is set, override `chains.arbitrum.rpc`.
+  - Pass the merged config through the validation schema.
+  - On validation error: throw an error, causing Nest bootstrap to fail with a clear message.
+
+6. Validation Rules (examples)
+  - `loopIntervalMs` > 0 and <= e.g. 60000.
+  - `bridgeBackPct` in [0.9, 0.95].
+  - `gasReservePctOfProfit` in [0, 0.1].
+  - `minProfitRateBps` >= 150.
+  - `totalFeeRateBps` between 120 and 180.
+  - `singleTxCapPct` and `maxExposurePct` within (0, 1].
+  - For each configured chain: `rpc` non-empty string; `usdt` and `tokenA` look like hex addresses.
+  - `wallets.keystorePath` present; `wallets.address` looks like an address.
+
+7. ConfigService API
+  - Provide typed getters used by the rest of the app, e.g.:
+    - `getChainsConfig(): ChainsConfig` – returns map of chain configs.
+    - `getRiskConfig(): RiskConfig`.
+    - `getFeesConfig(): FeesConfig`.
+    - `getOpsConfig(): OpsConfig`.
+    - `getLoggingConfig(): LoggingConfig`.
+    - `getWalletsConfig(): WalletsConfig`.
+  - Optionally helper methods:
+    - `getChainRpc(chainId: ChainId): string`.
+    - `getDexForChain(chainId: ChainId): DexConfig`.
+  - Ensure these return deeply immutable objects (e.g. via `Object.freeze`) to avoid runtime mutation.
+
+8. Nest Integration
+  - Register `ConfigService` as a provider in `UtilsModule` and export it.
+  - Import `UtilsModule` into other modules needing config (Orchestrator, PriceMonitor, Dex, Bridge, Risk).
+  - Ensure `ConfigService` is constructed only once (singleton).
+
+9. `.env` and `.env.example`
+  - Define expected keys in `.env.example`, e.g.:
+    - `ARBITRUM_RPC=`, `BASE_RPC=`, `PRIVATE_KEY=`, `STARGATE_API_KEY=` (if applicable).
+    - Optional overrides: `MIN_PROFIT_RATE_BPS=`, `LOOP_INTERVAL_MS=`.
+  - Ensure `.env` is gitignored, while `.env.example` is committed.
+
+10. Error Handling & Logging
+  - On missing/invalid config values, log a clear message (using a minimal logger or console at bootstrap) before throwing.
+  - Include which field failed validation and the offending value.
+  - Avoid logging any secret values (e.g., private keys, API keys).
+
+11. Tests (linked to T3-15 but scoped here)
+  - Unit tests for `ConfigService` and schema:
+    - Valid `config.yaml` + `.env` passes and produces expected typed output.
+    - Missing mandatory fields cause validation errors.
+    - Env overrides YAML for selected fields.
+    - Invalid ranges (e.g., `bridgeBackPct` outside [0.9, 0.95]) fail validation.
+
+12. Definition of Done (for T3-07)
+  - `ConfigService` implemented with typed schema and validation.
+  - `config.yaml` template and `.env.example` exist and load correctly in dev.
+  - App fails fast with clear error on invalid/missing config.
+  - Orchestrator/Risk/Wallet modules can inject `ConfigService` and read typed values.
+
+#### Sub Tasks
+1. Analyse requirements
+  - Review `arch_general.md` section **4. Config Schema (config.yaml, indicative)** and `FRD.md`, then confirm all fields that must be supported.
+  - List required config domains: `chains`, `bridge`, `risk`, `fees`, `ops`, `logging`, `wallets`, plus env-only secrets/overrides, and write to `config.yaml` and `.env` respectively.
+
+2. Create config directory structure
+  - Create folder `src/utils/config` (or the agreed path).
+  - Ensure it is included in TS compilation (no path mapping issues).
+
+3. Define TypeScript config types
+  - In `config.types.ts`, define interfaces for:
+    - `ChainId`, `ChainConfig`, `ChainsConfig`.
+    - `BridgeConfig`, `RiskConfig`, `PositionCapsConfig`, `FeesConfig`, `OpsConfig`, `LoggingConfig`, `WalletsConfig`.
+  - Export a root `AppConfig` interface containing all sections.
+
+4. Choose and install libraries
+  - Add dependencies:
+    - `yaml` for parsing `config.yaml`.
+    - `zod` (or chosen validator) for schema validation.
+    - `dotenv` for `.env` loading (if not already present).
+  - Update `package.json` and lockfile via `pnpm`.
+
+5. Implement validation schema
+  - In `config.schema.ts`, use the chosen validator to define:
+    - Schema for each section (`chains`, `bridge`, `risk`, `fees`, `ops`, `logging`, `wallets`).
+    - Cross-field constraints (e.g., `bridgeBackPct` in [0.9, 0.95], `totalFeeRateBps` between 120 and 180).
+  - Export a `parseConfig(raw: unknown): AppConfig` helper.
+
+6. Implement env loader
+  - Call `dotenv.config()` at process start inside `ConfigService` (or a small bootstrap helper).
+  - Decide which env vars override YAML (e.g., `ARBITRUM_RPC`, `BASE_RPC`, `MIN_PROFIT_RATE_BPS`, `LOOP_INTERVAL_MS`).
+  - Document the mapping from env vars to config fields.
+
+7. Implement YAML loader
+  - In `config.service.ts`, read `config.yaml` from project root using `fs` + `yaml.parse`.
+  - Handle file-not-found and parse errors with clear messages.
+
+8. Merge YAML and env
+  - Build a merged raw config object:
+    - Start from YAML values.
+    - Overlay env-derived overrides for selected fields.
+  - Ensure env overrides do not introduce invalid types (convert strings to numbers/booleans as needed).
+
+9. Validate merged config
+  - Pass the merged config to `parseConfig`.
+  - On validation error:
+    - Log a concise error (without secrets).
+    - Throw an exception to make Nest bootstrap fail fast.
+
+10. Implement `ConfigService` API
+   - Create a Nest `@Injectable()` class exposing:
+    - `getConfig(): AppConfig`.
+    - Convenience getters: `getChainsConfig()`, `getRiskConfig()`, `getFeesConfig()`, `getOpsConfig()`, `getLoggingConfig()`, `getWalletsConfig()`.
+   - Freeze internal config object to avoid mutation at runtime.
+
+11. Wire `ConfigService` into `UtilsModule`
+   - Register `ConfigService` as a provider in `UtilsModule`.
+   - Export `ConfigService` so other modules can inject it.
+   - Verify DI works by injecting it into one simple service (e.g., OrchestratorService stub) and reading a field.
+
+12. Prepare `config.yaml` template
+   - Create a minimal but valid `config.yaml` example that satisfies the schema (dummy RPC URLs, token addresses, thresholds, etc.).
+   - Ensure this template lets the app start in dev mode without secrets.
+
+13. Prepare `.env.example`
+   - Add all expected env keys (RPCs, private key, API keys, overrides) with empty or dummy values.
+   - Confirm `.env` itself is ignored by git.
+
+14. Add basic tests for `ConfigService`
+   - Write unit tests to cover:
+    - Successful load of valid `config.yaml` + `.env`.
+    - Env overrides taking precedence over YAML for selected fields.
+    - Validation failures when mandatory fields are missing or out of range.
+   - Use temporary test fixtures or mocks for file reads.
+
+14. Final verification
+   - Run `pnpm build` and ensure no type errors from config modules.
+   - Run `pnpm test` and confirm config tests pass.
+   - Start the app and verify it logs a successful config load (without exposing secrets).

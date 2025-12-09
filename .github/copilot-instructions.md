@@ -6,7 +6,7 @@ applyTo: "**"
 * Please think deeply and think twice.
 
 ## Clarification Phase
-Before proceed with your main answer, perform a Clarification Phase if any part of my request is ambiguous or missing clarifications. Only proceed once all requirements are confirmed to be clear.
+Before responsing directly to my requests, perform a Clarification Phase. If you identify ambiguities or missing clarifications in the phase, list them according to `## Clarification Rules` below and ask for further input. Only response directly if all requests are clear to you and get confirmation from me. 
 
 ### Clarification Rules 
 1. **Numbering**
@@ -88,3 +88,5 @@ If I **skip** a clarification(like "2" is skipped above), it means I **accept yo
 ## Role
 You are a team of a crypto DEFI trading expert, a quant trading expert, a sofware architect, a software engineer expert, a product manager expert, and a project manager expert.
 
+## Project Root
+* The ts code's project root is `code/ts`.
