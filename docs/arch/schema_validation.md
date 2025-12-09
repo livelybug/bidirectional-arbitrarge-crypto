@@ -1,0 +1,49 @@
+
+# Project configuration schema validation - TS 
+  - Library: use `zod` for schema definition and validation.
+  - File: implement schemas in `src/utils/config/config.schema.ts` alongside `config.types.ts`.
+  - Structure:
+    - Define granular schemas per domain, then compose:
+      - `chainConfigSchema` → validates `rpc`, `usdt`, `tokenA`, `dex` as non-empty strings.
+      - `chainsConfigSchema` → `z.record(z.enum(ChainIds), chainConfigSchema)` or `z.object({ arbitrum: ..., base: ... })` aligned with `ChainId`.
+      - `bridgeStargateSchema` → `router`, `lzEndpoint` are non-empty strings that start with `0x`.
+      - `bridgeConfigSchema` → `provider` is literal `'stargate'`; `stargate` is `bridgeStargateSchema`.
+      - `positionCapsSchema` →
+        - `fullAmountMode`: boolean (default `true`).
+        - `singleTxCapPct`: number in `(0, 1]`.
+        - `maxExposurePct`: number in `(0, 1]` and `maxExposurePct >= singleTxCapPct`.
+      - `riskConfigSchema` →
+        - `minProfitRateBps`: integer in `[120, 10000]` (bps, >=1.2%).
+        - `stopLossPct`: number in `(0, 0.5]` (0–50%).
+        - `slippageBps`: integer in `[0, 1000]` (0–10%).
+        - `positionCaps`: `positionCapsSchema`.
+      - `feesConfigSchema` →
+        - `dexFeeBpsPerSwap`: integer in `[0, 300]`.
+        - `bridgeFlatUSD`: number `>= 0`.
+        - `bridgePctBps`: integer in `[0, 1000]`.
+        - `gasUSD`: number `>= 0`.
+        - `slippageReserveBps`: integer in `[0, 1000]`.
+        - `totalFeeRateBps`: integer in `[0, 5000]` and `totalFeeRateBps >= dexFeeBpsPerSwap`.
+      - `opsConfigSchema` →
+        - `loopIntervalMs`: integer in `(0, 60000]` (default 1000).
+        - `bridgeBackPct`: number in `(0, 1]`.
+        - `gasReservePctOfProfit`: number in `[0, 1]`.
+      - `loggingConfigSchema` →
+        - `level`: enum `'debug' | 'info' | 'warn' | 'error'`.
+        - `json`: boolean.
+      - `walletsConfigSchema` →
+        - `keystorePath`: non-empty string.
+        - `address`: string that starts with `0x` and length 42 (basic EVM address check).
+    - Compose the root schema as `appConfigSchema` with shape `{ chains, bridge, risk, fees, ops, logging, wallets }`.
+  - Typing:
+    - Export `appConfigSchema` and sub-schemas; use `z.infer<typeof appConfigSchema>` to assert compatibility with `AppConfig` (from `config.types.ts`).
+    - Optionally add a compile-time helper (e.g. `type _AppConfigCheck = AssertEqual<AppConfig, z.infer<typeof appConfigSchema>>`) to keep types in sync.
+  - Env preprocessing:
+    - For env overrides that will be merged later (e.g., `MIN_PROFIT_RATE_BPS`, `LOOP_INTERVAL_MS`), use `z.preprocess` in the relevant fields to coerce string inputs to numbers/booleans.
+    - Example: `z.preprocess(v => (typeof v === 'string' ? Number(v) : v), z.number().int().min(0))` for numeric bps fields.
+  - Failure behavior:
+    - Expose a pure function `parseConfig(raw: unknown): AppConfig` that calls `appConfigSchema.parse(raw)` and returns typed config.
+    - On validation failure, `parseConfig` should throw the `zod` error; the Nest bootstrap (via `ConfigService`) must not catch-and-continue, so the process exits with a clear stack and message.
+  - Error messages and DX:
+    - Rely on `zod`’s default error map but keep field names stable and human-readable (e.g., `risk.minProfitRateBps`).
+    - Ensure the schema definition order mirrors `config.yaml` to make it easy to visually align config values and validation rules.

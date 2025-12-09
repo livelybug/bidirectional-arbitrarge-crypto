@@ -399,10 +399,12 @@ Implementation plan for a typed, validated config loader using `.env` and `confi
   - Update `package.json` and lockfile via `pnpm`.
 
 5. Implement validation schema
-  - In `config.schema.ts`, use the chosen validator to define:
-    - Schema for each section (`chains`, `bridge`, `risk`, `fees`, `ops`, `logging`, `wallets`).
-    - Cross-field constraints (e.g., `bridgeBackPct` in [0.9, 0.95], `totalFeeRateBps` between 120 and 180).
+  - In `config.schema.ts`, use the chosen validator `zod` to define:
+    - Schema for each section and fields in `code/ts/config.yaml`
   - Export a `parseConfig(raw: unknown): AppConfig` helper.
+  - Refer to `docs/arch/schema_validation.md` for validation details.
+  - Implement unit test for the validation, 
+  - After the validation above passed, in the unit test, read the `code/ts/config.yaml` then validate it.
 
 6. Implement env loader
   - Call `dotenv.config()` at process start inside `ConfigService` (or a small bootstrap helper).
@@ -451,7 +453,7 @@ Implementation plan for a typed, validated config loader using `.env` and `confi
     - Validation failures when mandatory fields are missing or out of range.
    - Use temporary test fixtures or mocks for file reads.
 
-14. Final verification
+15. Final verification
    - Run `pnpm build` and ensure no type errors from config modules.
    - Run `pnpm test` and confirm config tests pass.
    - Start the app and verify it logs a successful config load (without exposing secrets).
