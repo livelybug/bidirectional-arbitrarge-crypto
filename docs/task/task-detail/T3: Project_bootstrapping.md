@@ -457,3 +457,132 @@ Implementation plan for a typed, validated config loader using `.env` and `confi
    - Run `pnpm build` and ensure no type errors from config modules.
    - Run `pnpm test` and confirm config tests pass.
    - Start the app and verify it logs a successful config load (without exposing secrets).
+
+##### Sub Task of (6. Implement env loader)
+
+TDD plan for env loader and merge logic
+
+1. Define core behavior as a pure helper
+   - Introduce a small, framework-agnostic helper (e.g. `loadAndMergeConfig`) that takes `{ yamlConfig, env }` and returns a merged raw config object, without touching the filesystem or calling `dotenv`.
+   - Responsibility of this helper:
+     - Start from the YAML-derived object.
+     - Apply a small, explicit set of env overrides (e.g. `ARBITRUM_RPC`, `BASE_RPC`, `MIN_PROFIT_RATE_BPS`, `LOOP_INTERVAL_MS`).
+     - Coerce string env values to the appropriate types (numbers where needed).
+
+2. Add unit tests for the helper (new spec file)
+   - File: `src/utils/config/config.env-merge.spec.ts` (or similar).
+   - Test 1: "uses YAML values when no env overrides set"
+     - Arrange: in-memory `yamlConfig` object matching a minimal subset of `config.yaml`; `env` object without override keys.
+     - Act: `const merged = loadAndMergeConfig({ yamlConfig, env })`.
+     - Assert: merged fields equal YAML for all tested paths.
+   - Test 2: "env overrides numeric and string fields correctly"
+     - Arrange: same `yamlConfig`; `env` includes overrides such as `ARBITRUM_RPC`, `MIN_PROFIT_RATE_BPS`, `LOOP_INTERVAL_MS`.
+     - Act: call helper, then pass `merged` into `parseConfig` from `config.schema.ts`.
+     - Assert: `chains.arbitrum.rpc`, `risk.minProfitRateBps`, and `ops.loopIntervalMs` reflect env values and schema validation passes.
+   - Test 3: "invalid env override causes schema validation failure"
+     - Arrange: valid YAML; `env` sets an out-of-range value (e.g. `MIN_PROFIT_RATE_BPS=-10` or `LOOP_INTERVAL_MS=0`).
+     - Act/Assert: `parseConfig(merged)` throws (Zod error), proving invalid overrides are caught.
+   - Test 4: "helper does not mutate original YAML object"
+     - Arrange: keep a deep copy of `yamlConfig`.
+     - Act: call helper.
+     - Assert: original `yamlConfig` equals its copy, ensuring no in-place mutation.
+   - Test 5: "safety around missing chains records skipped env and logs error"
+     - Arrange:
+       - Build a minimal `yamlConfig` that omits one of the known chains (e.g. no `chains.arbitrum` key) but includes at least one other chain (e.g. `chains.base`).
+       - Set `env.ARBITRUM_RPC = 'https://arb-override'` (non-empty string) and leave other RPC envs undefined.
+       - Spy on `console.error` via Jest (e.g. `const spy = jest.spyOn(console, 'error').mockImplementation(() => {})`).
+     - Act:
+       - Call `const { config, skippedEnv } = loadAndMergeConfig({ yamlConfig, env });`.
+     - Assert:
+       - `config.chains` still has no `arbitrum` key (helper must not create missing chains).
+       - `skippedEnv` has a key `ARBITRUM_RPC` whose value contains a clear reason (e.g. includes the word `missing`).
+       - `console.error` was called at least once with a message that mentions both `ARBITRUM_RPC` and `chains.arbitrum` being missing (e.g. using `expect(spy).toHaveBeenCalledWith(expect.stringContaining('ARBITRUM_RPC'), expect.stringContaining('chains.arbitrum'))` or a similar matcher).
+       - Restore the console spy at the end of the test.
+
+3. Implement `loadAndMergeConfig` to satisfy tests
+   - Location: `src/utils/config/config.service.ts` or a dedicated `env-merge.ts` under `src/utils/config`.
+   - Steps:
+     - Accept parameters `{ yamlConfig, env }`.
+     - Deep-clone `yamlConfig` into a working object.
+     - For each supported env var:
+       - If present in `env`, override the corresponding path on the working object (e.g. `env.ARBITRUM_RPC` → `chains.arbitrum.rpc`).
+       - Coerce numeric strings to numbers (e.g. `Number(env.MIN_PROFIT_RATE_BPS)`), leaving undefined values untouched.
+     - Return the merged object.
+
+4. Add a thin integration test around `parseConfig` + helper
+   - Extend the existing `config.schema.spec.ts` or add a focused spec:
+     - Arrange: in-memory YAML object similar to `code/ts/config.yaml` and an `env` object with a couple of overrides.
+     - Act: `const merged = loadAndMergeConfig({ yamlConfig, env }); const validated = parseConfig(merged);`.
+     - Assert: key overridden fields match env, and `validated` is defined.
+
+5. Wire into `ConfigService` (implementation after tests)
+   - In `ConfigService` bootstrap logic:
+     - Call `dotenv.config()` once to populate `process.env`.
+     - Read `config.yaml` from disk and parse into `yamlConfig`.
+     - Call `loadAndMergeConfig({ yamlConfig, env: process.env })`.
+     - Pass result to `parseConfig` to obtain a typed `AppConfig`.
+   - Keep this wiring very thin so that most behavior remains covered by the pure helper tests.
+
+6. Final verification
+   - Re-run `pnpm test` and ensure:
+     - New env-merge tests pass.
+     - Existing config schema tests (including `config.yaml` validation) still pass.
+   - Optionally add one end-to-end test that sets `process.env` directly (no actual `.env` file needed in tests) and verifies `ConfigService` returns a config reflecting env overrides.
+
+###### Sub Task of (1. Define core behavior as a pure helper)
+Implementation plan for `loadAndMergeConfig` as a pure helper:
+
+1. Shape and location
+   - Create `src/utils/config/env-merge.ts` exporting:
+     - `export interface RawConfig extends AppConfig {}` (imported from `config.types.ts` for structure).
+     - `export interface EnvMergeInput { yamlConfig: RawConfig; env: NodeJS.ProcessEnv; }`.
+     - `export function loadAndMergeConfig(input: EnvMergeInput): RawConfig`.
+
+2. Cloning and immutability
+   - Inside `loadAndMergeConfig`, deep-clone `yamlConfig` using `structuredClone` (Node 20) to a `merged` object.
+   - Never mutate `yamlConfig` directly; all changes happen on `merged`.
+
+3. Supported overrides (first iteration)
+   - Chain RPCs: map env → config as
+     - `ARBITRUM_RPC` → `merged.chains.arbitrum.rpc` (if both chain and env var exist).
+     - `BASE_RPC` → `merged.chains.base.rpc`.
+     - `OPTIMISM_RPC` → `merged.chains.optimism.rpc`.
+     - `ETHEREUM_RPC` → `merged.chains.ethereum.rpc`.
+     - `BSC_RPC` → `merged.chains.bsc.rpc`.
+     - `POLYGON_RPC` → `merged.chains.polygon.rpc`.
+   - Risk threshold:
+     - `MIN_PROFIT_RATE_BPS` (string) → `Number(value)` → `merged.risk.minProfitRateBps`.
+   - Ops loop:
+     - `LOOP_INTERVAL_MS` (string) → `Number(value)` → `merged.ops.loopIntervalMs`.
+
+4. Override rules and coercion
+   - For each numeric env (`MIN_PROFIT_RATE_BPS`, `LOOP_INTERVAL_MS`):
+     - If env var is `undefined` or empty string → skip (keep YAML).
+     - Parse with `Number(envVal)`; if `Number.isFinite(parsed)` is false → skip (ignore invalid env).
+     - Otherwise set the numeric field on `merged`.
+   - For string RPC envs:
+     - If env var is a non-empty string → overwrite the corresponding `rpc`.
+     - If env var is `undefined` or empty → skip.
+   - Do not attempt to validate ranges here; rely on `parseConfig` later for semantic validation.
+
+5. Safety around missing chains
+  - Before writing `merged.chains.<id>.rpc`, check `merged.chains` has that key; if not, record the env key in `skippedEnv` with a human-readable reason and log an explicit `console.error`, then ignore that override.
+  - This keeps helper resilient even if YAML omits some chains, while still surfacing configuration issues clearly.
+
+6. Types and exports
+  - Use `RawConfig` in function signature and implementation for type safety, but treat it as a “raw” pre-validated structure (no Zod dependency in helper).
+  - Introduce `EnvMergeResult` with shape `{ config: RawConfig; skippedEnv: Record<string, string> }` so callers can inspect which env keys were ignored (e.g. missing chains or invalid numeric values).
+  - Export only the types and `loadAndMergeConfig` from `env-merge.ts`; no side effects, no `dotenv`, no `fs`.
+
+7. Usage pattern (for later wiring and tests)
+   - Call pattern:
+     - YAML loader builds an object `yamlConfig: RawConfig` from `config.yaml`.
+     - Tests and `ConfigService` call:
+       - `const merged = loadAndMergeConfig({ yamlConfig, env: process.env });`
+       - `const validated = parseConfig(merged);`
+   - Unit tests in `config.env-merge.spec.ts` cover:
+     - No overrides → merged equals YAML for tested paths.
+     - Valid overrides → merged reflects env and `parseConfig` passes.
+     - Out-of-range overrides → `parseConfig` throws (schema catches it).
+     - Original `yamlConfig` remains unchanged (deep clone works).
+
