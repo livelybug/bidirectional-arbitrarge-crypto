@@ -706,6 +706,63 @@ Objective: Establish shared DI tokens and TypeScript interfaces that mirror the 
 6. Prepare for T3-10 handoff
   - Ensure T3-10 scaffolding work items can directly import interfaces/tokens without additional refactors.
 
+### [P0] T3-10: Scaffold feature modules
+
+#### Implementation Plan
+
+Objective: Stand up Nest modules/services for orchestrator, price monitor, dex adapters, bridge, risk, and utils wallet wiring so the app boots with a realistic (mocked) arbitrage loop cadence.
+
+1. Goals
+  - Provide concrete injectable services that satisfy the interfaces/tokens from T3-09.
+  - Wire modules so OrchestratorService can run a basic 1s loop, call PriceMonitor, evaluate RiskManager, and log mock decisions.
+  - Keep implementations side-effect-light (no real on-chain calls) but structured for future expansion.
+
+2. Files & Modules
+  - `src/orchestrator/orchestrator.module.ts` + `orchestrator.service.ts` (OnModuleInit loop stub).
+  - `src/price_monitor/price-monitor.module.ts` + `.service.ts` returning deterministic mock prices.
+  - `src/dex/dex.module.ts` + lightweight adapter classes/factories for UniswapV3, Camelot, Velodrome, QuickSwap, SushiSwap, PancakeSwap.
+  - `src/bridge/bridge.module.ts` + `stargate.service.ts` stub implementing bridge interface.
+  - `src/risk_control/risk.module.ts` + `risk-manager.service.ts` with basic threshold logic.
+  - `src/utils/wallet/wallet.service.ts` added to `UtilsModule` and exported via `WALLET` token.
+
+3. Wiring Strategy
+  - Each feature module imports `UtilsModule` for Config/Logger access.
+  - Modules expose their DI token bindings via `useExisting` or factory providers so consumers inject by symbol.
+  - `AppModule` imports all feature modules so orchestrator is instantiated and interval begins on bootstrap.
+
+4. Stub Behaviors
+  - OrchestratorService: builds a tiny list of demo trading pairs from config, calls PriceMonitor + RiskManager each tick, logs plan/reason, no real adapter calls yet.
+  - PriceMonitorService: returns stable pseudo-random price pairs based on pair id; logs sample.
+  - Dex/Bridge adapters: return canned responses (e.g., tx hashes like `mock-tx-...`), enabling future orchestration wiring.
+  - RiskManagerService: computes simple profit in bps, compares to `minProfitRateBps`, emits basic ExecutionPlan when threshold satisfied.
+  - WalletService: surfaces configured address, returns lightweight provider/signer placeholders, stub balances.
+
+5. Tests & Verification
+  - Ensure `pnpm build` and `pnpm test` stay green after scaffold (no additional unit tests required yet, but structure should be testable).
+  - Manual sanity: start dev server and confirm orchestrator logs every loop (optional but recommended).
+
+6. Definition of Done
+  - All feature modules exist with providers exporting their DI tokens.
+  - Orchestrator loop runs (no-op decisions acceptable) without throwing.
+  - AppModule compiles with new module imports; bootstrap continues to succeed.
+
+#### Sub Tasks
+1. Create module/service files
+  - Implement `OrchestratorModule`, `PriceMonitorModule`, `DexModule`, `BridgeModule`, `RiskModule`, updating folder structures accordingly.
+
+2. Implement service classes
+  - `OrchestratorService` (interval loop), `PriceMonitorService` (mock prices), `RiskManagerService` (threshold logic), `WalletService`, `StargateBridgeService`, `StaticDexAdapter` instances.
+
+3. Provide DI bindings
+  - Use `useExisting` to bind services to tokens where practical; use factory providers when instantiation differs per DEX token.
+
+4. Update UtilsModule/AppModule
+  - Export `WALLET` provider from UtilsModule; import new feature modules into `AppModule` so DI graph is reachable.
+
+5. Basic manual verification
+  - Run `pnpm build` and `pnpm test` to ensure scaffolding integrates cleanly.
+
+
 ###### Sub Task of (1. Define core behavior as a pure helper)
 Implementation plan for `loadAndMergeConfig` as a pure helper:
 
