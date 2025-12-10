@@ -588,6 +588,53 @@ Implementation plan for `loadAndMergeConfig` as a pure helper:
 
 ### [P0] T3-08: LoggerService (JSON)
 
+#### Implementation Plan (TDD)
+
+**Objective:** Implement a structured JSON `LoggerService` for Nest.js, supporting log levels, opId correlation, and integration as the default logger, using Test-Driven Development (TDD).
+
+1. **Requirements & Features**
+  - Emit logs in structured JSON format.
+  - Support log levels: `info`, `warn`, `error`, `debug`.
+  - Optionally include `opId` for correlation.
+  - Always include `timestamp`, `level`, and `message` fields.
+  - Integrate as the default Nest.js logger.
+  - (Optional) Support file-based logging via config.
+
+2. **TDD Steps**
+  - Create test file: `src/utils/logger/logger.service.spec.ts`.
+  - Write failing tests for:
+    - Logging at each level outputs correct JSON.
+    - `opId` is included when provided.
+    - Default fields are always present.
+    - Invalid log levels are handled gracefully.
+    - Output is sent to `stdout` (or file, if configured).
+  - Implement minimal code to pass each test, iterating feature by feature.
+  - Refactor for clarity and maintainability after all tests pass.
+
+3. **Test Scenarios**
+  - Log at each level (`info`, `warn`, `error`, `debug`).
+  - Log with and without `opId`.
+  - Log with empty or large messages.
+  - Handle invalid log levels.
+  - Output destination (stdout/file).
+  - Integration: Used as Nest.js logger, logs on app startup.
+
+4. **Mocking & Isolation**
+  - Use Jest to spy on `process.stdout.write` or console methods.
+  - Reset mocks and environment between tests.
+  - Avoid side effects or real file writes in unit tests.
+
+5. **Integration**
+  - Register `LoggerService` in `UtilsModule` and export it.
+  - Set as Nest.js logger in `main.ts` or `AppModule`.
+  - Write an integration test to verify logs during app bootstrap.
+
+6. **Definition of Done**
+  - All required features are implemented and tested.
+  - All unit and integration tests pass.
+  - Logger emits correct JSON logs in all scenarios.
+  - Code is clean, documented, and ready for use by all modules.
+
 
 
 # Todo Task
