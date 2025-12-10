@@ -586,3 +586,48 @@ Implementation plan for `loadAndMergeConfig` as a pure helper:
      - Out-of-range overrides → `parseConfig` throws (schema catches it).
      - Original `yamlConfig` remains unchanged (deep clone works).
 
+### [P0] T3-08: LoggerService (JSON)
+
+
+
+# Todo Task
+### 14. Add basic tests for `ConfigService`
+
+#### Implementation Plan
+
+**Objective:** Ensure `ConfigService` is robustly unit tested for correct config loading, env override precedence, and validation failures, using Jest and appropriate mocking.
+
+1. **Test File Location**
+  - Create `src/utils/config/config.service.spec.ts` for direct unit tests of `ConfigService`.
+
+2. **Test Scenarios**
+  - **a. Valid config loads successfully**
+    - Mock file system reads to provide a valid `config.yaml` object.
+    - Mock `process.env` as needed (empty or with valid values).
+    - Assert that `ConfigService` loads, validates, and exposes correct typed getters.
+  - **b. Env overrides take precedence**
+    - Provide a valid `config.yaml` and set env vars (e.g., `MIN_PROFIT_RATE_BPS`, `ARBITRUM_RPC`).
+    - Assert that overridden fields reflect env values, not YAML.
+  - **c. Validation failures**
+    - Mock missing or out-of-range fields in YAML or env.
+    - Assert that `ConfigService` throws with a clear error message.
+  - **d. Immutability**
+    - Assert that returned config objects are deeply frozen (mutations throw or have no effect).
+
+3. **Mocking Strategy**
+  - Use `jest.mock` or `jest.spyOn` to mock `fs.readFileSync`/`fs.readFile` and `yaml.parse`.
+  - Use `jest.resetModules()` and direct assignment to mock `process.env` per test.
+  - Avoid reading actual files or using real env in tests.
+
+4. **Test Structure**
+  - Use `describe` blocks for each scenario.
+  - Use `beforeEach`/`afterEach` to reset mocks and env.
+  - Ensure tests are isolated and do not leak state.
+
+5. **Coverage**
+  - All main code paths: valid load, env override, validation error, immutability.
+  - Edge cases: missing YAML, missing env, invalid types, unknown env keys.
+
+6. **Run and verify**
+  - Run `pnpm test` to ensure all new tests pass and coverage is reported.
+  - Confirm that failures are clear and actionable.
