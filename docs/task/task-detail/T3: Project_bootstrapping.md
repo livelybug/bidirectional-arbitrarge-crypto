@@ -639,6 +639,73 @@ Objective: Implement a structured JSON `LoggerService` with opId support, wired 
   - Run `pnpm test` to ensure logger tests pass.
   - Optionally run `pnpm build` to confirm no type errors.
 
+### [P0] T3-09: Define DI tokens and interfaces
+
+#### Implementation Plan
+
+Objective: Establish shared DI tokens and TypeScript interfaces that mirror the architecture/FRD contracts so every module (orchestrator, price monitor, dex, bridge, risk, wallet) can depend on abstractions rather than concrete classes.
+
+1. Goals
+  - Provide stable, strongly typed interfaces for `PriceMonitor`, `DexAdapter`, `BridgeAdapter`, `RiskManager`, and `WalletAdapter` aligned with `arch_general.md` section 3.
+  - Enable Nest DI via unique tokens (Symbols) for each adapter/service role so implementations can be swapped or mocked.
+  - Keep interfaces implementation-agnostic and ready for future modules/tests.
+
+2. Files & Locations
+  - `src/common/tokens.ts` – central registry exporting all DI symbols.
+  - `src/price_monitor/price-monitor.interface.ts` – `PriceMonitor` contract.
+  - `src/dex/dex-adapter.interface.ts` – common DEX adapter surface plus helper types.
+  - `src/bridge/bridge-adapter.interface.ts` – bridge contract (start/settlement).
+  - `src/risk_control/risk-manager.interface.ts` – risk gating/utility methods.
+  - `src/utils/wallet/wallet.interface.ts` – wallet/provider abstraction (providers, signers, balances).
+  - Optional future shared types may live under `src/common/types.ts` if config-derived types are insufficient.
+
+3. Interfaces
+  - Reuse domain types from `config.types.ts` (e.g., `ChainId`, `ChainsConfig`, `FeesConfig`).
+  - `PriceMonitor.getPairPrices(pair: TradingPairConfig): Promise<Prices>` for dual venue prices.
+  - `DexAdapter` methods for estimating and executing swaps plus balance getters; include readonly `chain: ChainId`.
+  - `BridgeAdapter` covering fee estimate, transfer initiation, settlement polling.
+  - `RiskManager.shouldExecute(...) → { ok, plan?, reason? }` plus helper checks.
+  - `WalletAdapter` for retrieving providers/signers and balances per chain/token without leaking key material.
+
+4. DI Tokens
+  - Define `Symbol` tokens for each injectable role:
+    - `PRICE_MONITOR`, `DEX_UNISWAP_V3`, `DEX_CAMELOT_V3`, `DEX_VELODROME_V2`, `DEX_QUICKSWAP_V3`, `DEX_SUSHISWAP_V2`, `DEX_PANCAKESWAP_V3`.
+    - `BRIDGE_STARGATE` (extend with more bridge providers later).
+    - `RISK_MANAGER`, `WALLET`.
+  - Tokens live in `src/common/tokens.ts` and are the single source of truth for imports/exports.
+
+5. Nest Integration Touchpoints
+  - Future modules (T3-10+) inject abstractions via `@Inject(TOKEN)` rather than concrete classes.
+  - UtilsModule (or feature modules) will provide concrete classes bound to these tokens.
+  - Tests can register mocks by providing `{ provide: TOKEN, useValue: mock }`.
+
+6. Definition of Done
+  - All interface files compile and export the shapes needed by orchestrator + adapters.
+  - `src/common/tokens.ts` exports every agreed DI token.
+  - No module consumes these yet, but sample imports compile (CI/build stays green).
+  - Documentation (this plan + tasks) reflects delivery scope.
+
+#### Sub Tasks
+1. Create `src/common/tokens.ts`
+  - Export every DI token as `const NAME = Symbol('NAME')`.
+  - Include price monitor, dex adapters (per key), bridge, risk manager, wallet.
+
+2. Add interface skeletons per module
+  - `price-monitor.interface.ts`, `dex-adapter.interface.ts`, `bridge-adapter.interface.ts`, `risk-manager.interface.ts`, `wallet.interface.ts`.
+  - Reference shared config types and domain models (e.g., `TradingPairConfig`, `ExecutionPlan`).
+
+3. Define shared domain helpers if needed
+  - Add or re-export types such as `Prices`, `ExecutionPlan`, `FeeModel`, `PairRuntimeState` to keep interfaces consistent with `arch_general.md`.
+
+4. Document Nest usage patterns
+  - In each interface file, add brief comments (if necessary) on expected responsibilities to guide future implementers/tests.
+
+5. Verify compilation
+  - Run `pnpm build` or `pnpm test -- --runTestsByPath` for lint/type checks ensuring new files integrate cleanly.
+
+6. Prepare for T3-10 handoff
+  - Ensure T3-10 scaffolding work items can directly import interfaces/tokens without additional refactors.
+
 ###### Sub Task of (1. Define core behavior as a pure helper)
 Implementation plan for `loadAndMergeConfig` as a pure helper:
 
