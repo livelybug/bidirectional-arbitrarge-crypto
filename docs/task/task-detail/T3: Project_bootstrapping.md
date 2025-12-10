@@ -598,6 +598,46 @@ Objective: Implement a structured JSON `LoggerService` with opId support, wired 
    - `UtilsModule` exports `LoggerService` and at least one core service (e.g., `AppService` or `ConfigService`) uses it.
    - Unit tests for `LoggerService` pass via `pnpm test` and demonstrate correct formatting and basic behavior.
    - No sensitive values are logged in default flows; logging behavior is documented in code comments.
+#### tasks of T3-08: LoggerService (JSON)
+1. Create logger directory and files
+  - Create folder `src/utils/logger/`.
+  - Add `src/utils/logger/logger.service.ts` with a stub `LoggerService` class.
+
+2. Define LoggerService API
+  - Add methods: `info`, `warn`, `error`, `debug` with signature `(message: string, meta?: Record<string, unknown>, opId?: string)`.
+  - Add `withOpId(opId: string)` returning a wrapper that reuses the underlying logger.
+
+3. Implement JSON log formatting
+  - Implement a private `log(level, message, meta, opId)` helper.
+  - Build log objects with shape `{ ts, level, msg, opId, service, context?, data? }`.
+  - Serialize using `JSON.stringify` and send to `console.log` / `console.error`.
+
+4. Add level filtering
+  - Introduce a minimal level map: `debug < info < warn < error`.
+  - Accept a configured minimum level (constructor arg or setter).
+  - Drop logs below the configured minimum level.
+
+5. Integrate with ConfigService (lightly)
+  - Decide how to inject or otherwise obtain `logging.level` and `logging.json` from `ConfigService`.
+  - For T3, default to `info` and `json=true` when config is not yet available.
+
+6. Wire into UtilsModule
+  - Register `LoggerService` in `UtilsModule.providers` and `UtilsModule.exports`.
+  - Ensure existing imports (e.g., `ConfigService`) remain unchanged.
+
+7. Use LoggerService in at least one service
+  - Inject `LoggerService` into `AppService` (and/or a simple stub service).
+  - Replace any direct `console.log` or `Logger` usages in that service with the new `LoggerService`.
+
+8. Add unit tests for LoggerService
+  - Create `src/utils/logger/logger.service.spec.ts`.
+  - Spy on `console.log` / `console.error` to assert one-line JSON logs for each level.
+  - Test level filtering behavior (e.g., `warn` threshold suppresses `debug`/`info`).
+  - Test `withOpId` propagation and `meta` attachment into `data`.
+
+9. Run verification commands
+  - Run `pnpm test` to ensure logger tests pass.
+  - Optionally run `pnpm build` to confirm no type errors.
 
 ###### Sub Task of (1. Define core behavior as a pure helper)
 Implementation plan for `loadAndMergeConfig` as a pure helper:
