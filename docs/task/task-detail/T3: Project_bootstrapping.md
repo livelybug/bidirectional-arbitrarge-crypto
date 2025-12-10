@@ -197,6 +197,7 @@
   - Steps: OnModuleInit start interval (ops.loopIntervalMs); fetch mock prices; compute net forward/backward profits (subtract totalFeeRateBps); call RiskManager.shouldExecute(); log decision; honor dry-run flag.
   - Deps: T3-07, T3-08, T3-10
   - Done when: Heartbeat and decision logs every 1s.
+  - Implementation plan at (docs/task/task-detail/T3-11:Orchestrator_loop.md)
 
 - [P1] T3-12: Health endpoint
   - Steps: Add `/status` controller returning heartbeat timestamp, paused flag.
