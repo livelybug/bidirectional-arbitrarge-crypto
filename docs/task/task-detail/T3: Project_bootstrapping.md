@@ -529,6 +529,76 @@ TDD plan for env loader and merge logic
      - Existing config schema tests (including `config.yaml` validation) still pass.
    - Optionally add one end-to-end test that sets `process.env` directly (no actual `.env` file needed in tests) and verifies `ConfigService` returns a config reflecting env overrides.
 
+### [P0] T3-08: LoggerService (JSON)
+
+#### Implementation Plan
+
+Objective: Implement a structured JSON `LoggerService` with opId support, wired via `UtilsModule`, usable across services (including future Orchestrator), and easy to adapt as a Nest logger transport later.
+
+1. Files & Location
+   - Place logger implementation under `src/utils/logger`:
+     - `src/utils/logger/logger.service.ts` – core JSON logger service (Nest injectable).
+     - (Optional later) `src/utils/logger/nest-logger.adapter.ts` – adapter implementing Nest `LoggerService` interface for `app.useLogger()`.
+   - Register `LoggerService` in `UtilsModule` alongside `ConfigService`.
+
+2. LoggerService API
+   - Methods:
+     - `info(message: string, meta?: Record<string, unknown>, opId?: string): void`.
+     - `warn(message: string, meta?: Record<string, unknown>, opId?: string): void`.
+     - `error(message: string, meta?: Record<string, unknown>, opId?: string): void`.
+     - `debug(message: string, meta?: Record<string, unknown>, opId?: string): void`.
+     - `withOpId(opId: string): LoggerService` – return a shallow wrapper instance with `opId` bound for all calls.
+   - Log entry shape (single line JSON per log):
+     - `{ ts, level, msg, opId, service, context?, data? }`, where:
+       - `ts`: ISO timestamp.
+       - `level`: `info` | `warn` | `error` | `debug`.
+       - `msg`: main message string.
+       - `opId`: optional correlation id.
+       - `service`: logger context, typically Nest `LoggerService` name or explicit context string.
+       - `context`: optional string tag (e.g., `"orchestrator"`, `"config"`).
+       - `data`: arbitrary structured metadata (from `meta`).
+
+3. Log Level & Config Integration
+   - Read initial `logging.level` and `logging.json` from `ConfigService` (if available) during application bootstrap wiring (AppModule/UtilsModule level), but keep `LoggerService` usable even if `ConfigService` is not yet injected (e.g., use default level `info`, `json=true`).
+   - Basic level filtering inside `LoggerService`:
+     - Map levels to numeric severity (e.g., `debug=10`, `info=20`, `warn=30`, `error=40`).
+     - Drop logs below configured minimum level.
+   - For this T3 phase, use synchronous `console.log`/`console.error` as transport; JSON formatting handled in service.
+
+4. Implementation Details
+   - `LoggerService` is `@Injectable()` with a constructor parameter `context?: string` (default to class name) to populate `service` field.
+   - Internally implement a private `log(level, message, meta, opId)` helper that:
+     - Builds a plain object per schema above.
+     - Ensures `meta` is shallow-cloned and strips out `undefined` fields.
+     - Serializes to JSON via `JSON.stringify`.
+     - Sends `info/warn/debug` to `console.log` and `error` to `console.error`.
+   - Implement `withOpId(opId)` by returning a lightweight wrapper instance that forwards to the underlying logger with the given `opId` if not explicitly overridden.
+   - Avoid logging secrets: caller code must avoid passing raw private keys/API keys in `meta`; document this in comments.
+
+5. Nest Wiring
+   - Update `UtilsModule`:
+     - Add `LoggerService` to `providers` and `exports` alongside `ConfigService`.
+   - Usage examples:
+     - Inject `LoggerService` into `AppService` (and later Orchestrator/RiskManager) via constructor DI.
+     - For an operation, derive a correlated logger: `const log = this.logger.withOpId(opId); log.info('tick start', { pairCount });`.
+   - Defer global Nest logger integration (`app.useLogger`) to a later T3 task; current scope focuses on an app-level injectable logger.
+
+6. Tests
+   - Add `src/utils/logger/logger.service.spec.ts` with Jest tests:
+     - **Info/warn/error/debug serialization**: spy on `console.log`/`console.error`, call each method, assert that:
+       - Exactly one call is made per log.
+       - Payload is valid JSON and includes expected fields (`level`, `msg`, `service`).
+     - **Log level filtering**: configure logger with minimum level `warn` (e.g., via constructor or setter) and assert that `debug`/`info` produce no console calls, while `warn`/`error` do.
+     - **withOpId propagation**: `withOpId('abc')` then `info('msg')` results in JSON containing `"opId":"abc"`.
+     - **Meta attachment**: `info('msg', { foo: 'bar' })` includes `data.foo === 'bar'` in parsed output.
+   - Keep tests side-effect free by restoring console spies after each test.
+
+7. Definition of Done (for T3-08)
+   - `LoggerService` implemented with JSON output, level filtering, and `withOpId` helper.
+   - `UtilsModule` exports `LoggerService` and at least one core service (e.g., `AppService` or `ConfigService`) uses it.
+   - Unit tests for `LoggerService` pass via `pnpm test` and demonstrate correct formatting and basic behavior.
+   - No sensitive values are logged in default flows; logging behavior is documented in code comments.
+
 ###### Sub Task of (1. Define core behavior as a pure helper)
 Implementation plan for `loadAndMergeConfig` as a pure helper:
 
@@ -585,57 +655,6 @@ Implementation plan for `loadAndMergeConfig` as a pure helper:
      - Valid overrides → merged reflects env and `parseConfig` passes.
      - Out-of-range overrides → `parseConfig` throws (schema catches it).
      - Original `yamlConfig` remains unchanged (deep clone works).
-
-### [P0] T3-08: LoggerService (JSON)
-
-#### Implementation Plan (TDD)
-
-**Objective:** Implement a structured JSON `LoggerService` for Nest.js, supporting log levels, opId correlation, and integration as the default logger, using Test-Driven Development (TDD).
-
-1. **Requirements & Features**
-  - Emit logs in structured JSON format.
-  - Support log levels: `info`, `warn`, `error`, `debug`.
-  - Optionally include `opId` for correlation.
-  - Always include `timestamp`, `level`, and `message` fields.
-  - Integrate as the default Nest.js logger.
-  - (Optional) Support file-based logging via config.
-
-2. **TDD Steps**
-  - Create test file: `src/utils/logger/logger.service.spec.ts`.
-  - Write failing tests for:
-    - Logging at each level outputs correct JSON.
-    - `opId` is included when provided.
-    - Default fields are always present.
-    - Invalid log levels are handled gracefully.
-    - Output is sent to `stdout` (or file, if configured).
-  - Implement minimal code to pass each test, iterating feature by feature.
-  - Refactor for clarity and maintainability after all tests pass.
-
-3. **Test Scenarios**
-  - Log at each level (`info`, `warn`, `error`, `debug`).
-  - Log with and without `opId`.
-  - Log with empty or large messages.
-  - Handle invalid log levels.
-  - Output destination (stdout/file).
-  - Integration: Used as Nest.js logger, logs on app startup.
-
-4. **Mocking & Isolation**
-  - Use Jest to spy on `process.stdout.write` or console methods.
-  - Reset mocks and environment between tests.
-  - Avoid side effects or real file writes in unit tests.
-
-5. **Integration**
-  - Register `LoggerService` in `UtilsModule` and export it.
-  - Set as Nest.js logger in `main.ts` or `AppModule`.
-  - Write an integration test to verify logs during app bootstrap.
-
-6. **Definition of Done**
-  - All required features are implemented and tested.
-  - All unit and integration tests pass.
-  - Logger emits correct JSON logs in all scenarios.
-  - Code is clean, documented, and ready for use by all modules.
-
-
 
 # Todo Task
 ### 14. Add basic tests for `ConfigService`
