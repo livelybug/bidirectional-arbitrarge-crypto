@@ -257,6 +257,11 @@ wallets:
   # private key loading via env/keystore only
 ```
 
+### Fail-Fast Defaults
+- Bootstrapping enforces sane defaults by throwing when critical config slices are missing. `OrchestratorService` requires at least one base token, one quote token, and a minimum of two chains, with the first two chains each exposing at least one `dexList` entry. Any violation aborts startup before the loop begins.
+- Each concrete DEX adapter (for example `UniswapV3Service` and `VelodromeV2Service`) resolves its target chain by scanning `chains.*.dexList` for its `dexKey`. If no chain advertises the key—or if `chains` is empty—the adapter throws instead of silently defaulting to a placeholder chain like `arbitrum`.
+- `config.yaml` must therefore continue to list every DEX key for which an adapter exists and keep the token arrays populated. This configuration drift immediately in both runtime bootstrapping and the config unit tests.
+
 ## 5. Key Sequences
 
 ### 5.1. Price loop (1s cadence, dynamic multi-pair discovery)
