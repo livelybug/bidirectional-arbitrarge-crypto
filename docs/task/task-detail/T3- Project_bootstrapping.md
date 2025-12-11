@@ -820,6 +820,16 @@ Implementation plan for `loadAndMergeConfig` as a pure helper:
      - Valid overrides → merged reflects env and `parseConfig` passes.
      - Out-of-range overrides → `parseConfig` throws (schema catches it).
      - Original `yamlConfig` remains unchanged (deep clone works).
+### [P1] T3-16: CI (GitHub Actions)
+
+**Implementation Plan**
+1. **Workflow skeleton**: add `.github/workflows/ci.yml` (name: `CI`) triggered on `push` and `pull_request` against `main`.
+2. **Environment setup**: every job runs on `ubuntu-latest`, uses `actions/checkout@v4`, and installs Node 20.x via `actions/setup-node@v4` with `cache: 'pnpm'`; install deps via `pnpm install --frozen-lockfile`.
+3. **Job graph**: define three sequential jobs—`lint`, `build`, `test`—with `needs` so failures halt downstream jobs early.
+4. **Job commands**: `lint` runs `pnpm lint`; `build` runs `pnpm build`; `test` runs `pnpm test -- --runInBand` for deterministic Jest output.
+5. **Caching**: capture the pnpm store path (`pnpm store path`) and cache it keyed by OS + lockfile hash to reuse downloads across jobs.
+6. **Status visibility**: rely on default GitHub job summaries/badges; no additional notifications required at this stage.
+
 
 # Todo Task
 ### 14. Add basic tests for `ConfigService`
