@@ -14,7 +14,7 @@
 	- On paper (or in comments in this file), define, in terms of `symbolPair`, `swapPair`, and `arbitrargePair`, how to:  
 		- Enumerate `symbolPair` as all base/quote combinations from `tokens.{base,quote}` (cartesian product).  
 		- For each `symbolPair` and each chain, determine which of those token symbols are present in `chains[chainId].tokenList` and, for each DEX in `chains[chainId].dexList`, build corresponding `swapPair`s.  
-		- For each token pair that appears on at least two venues (two or more `swapPair`s), construct one or more `arbitrargePair`s / routes `(chainM, dexJ) → (chainN, dexK)` as described in the flow.  
+		- For each token pair that appears on at least two venues (two or more `swapPair`s), construct one or more `arbitrargePair`s / routes `(chainM, dexJ) → (chainN, dexK)` as described in the flow.
 	- Enumerate explicit failure cases and desired error messages (Fast-fail A/B/C in the flow section), e.g.:  
 		- Missing token coverage (Fast-fail A): base or quote symbol listed in `tokens` but missing from *all* `chains.*.tokenList`.  
 		- No `swapPairs` / `arbitrargePairs` discovered (Fast-fail B/C): no eligible routes found at all (empty discovery result).  
@@ -22,7 +22,7 @@
 	- Deps: `config.yaml`, schema docs (`schema_validation.md`).
 	- Output: [Arbitrarge Pairs Discovery Flow](#arbitrarge-pairs-discovery-flow) below
 
-- [P0] Implement pure discovery helper (framework-agnostic)  
+- [P0] Implement pure discovery helper (framework-agnostic)
 	- Add a pure function (e.g. `buildTradingPairsAndRoutes`) under `src/orchestrator` or `src/utils` that accepts a typed snapshot of config (`AppConfig` or `{ tokens, chains }`) and returns `{ pairs: TradingPairConfig[] }` plus optional metadata (e.g. skipped tokens, diagnostics).  
 	- Ensure the helper does **not** depend on Nest DI; it should be easily unit-testable by passing in an in-memory config object.  
 	- Implement deterministic ordering (e.g. sort by `baseToken`, then `quoteToken`, then `chainM`, `chainN`, `dexJ`, `dexK`) to keep results stable across runs.  
