@@ -72,6 +72,12 @@
 	- Inject the new discovery service into `OrchestratorService` and replace any temporary hard-coded pair/route derivation with a call to `getAllPairs()` (or equivalent).  
 	- Ensure the Orchestrator fails fast on startup if discovery throws (propagate the error rather than catching and continuing).  
 	- Leave multi-pair loop logic and execution selection to T4/T8; here only ensure the discovered list is available and logged once at boot.  
+	- Implementation steps (prep for coding session):  
+		1. **Inject discovery service into Orchestrator** – update `OrchestratorService`'s constructor to accept `PairDiscoveryService` (from `src/orchestrator/pair-discovery`) alongside existing `ConfigService`, `LoggerService`, `PriceMonitor`, and `RiskManager` dependencies.  
+		2. **Replace hard-coded pair derivation** – remove or deprecate the current `derivePairs()` helper that inspects `config.chains`/`tokens` directly; instead, initialize the private `pairs: TradingPairConfig[]` field from `pairDiscoveryService.getAllPairs()` so the orchestrator always runs on the discovered universe.  
+		3. **Preserve fail-fast semantics** – let any exception from `PairDiscoveryService` (which already wraps `buildArbitrargePairs`) bubble through Nest startup without a catch in `OrchestratorService`; optionally keep a guard that throws if `getAllPairs()` returns an empty list to make the failure mode explicit.  
+		4. **Align boot logging** – keep the existing `onModuleInit` log (`Orchestrator loop starting`) but source `pairCount` from the injected discovery data; avoid re-reading config tokens/chains here since discovery already logged a summary at its own initialization.  
+		5. **Adjust orchestrator tests** – update `orchestrator.service.spec.ts` (or add a focused spec under `test/orchestrator/`) to use a mocked `PairDiscoveryService` that returns a fixed `TradingPairConfig[]`; assert that the service is constructed with those pairs, that `pairCount` in the startup log matches, and that startup fails if the discovery mock throws.  
 	- Deps: Pair discovery service; existing Orchestrator loop (T3-11).
 
 - [P1] Implement unit tests for the pure discovery helper  
