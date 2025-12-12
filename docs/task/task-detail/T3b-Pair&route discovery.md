@@ -128,7 +128,7 @@
 	- Deps: Discovery algorithm finalized.
 
 - [P2] Keep README and operator docs aligned (optional)  
-	- Add a short note to `code/ts/README.md` (or ops docs) summarizing how trading pairs and routes are discovered from `config.yaml`, and what kinds of config mistakes will cause startup failures.  
+	- Add a short note to `docs/readme/README.ts.md` summarizing how trading pairs and routes are discovered from `config.yaml`, and what kinds of config mistakes will cause startup failures.  
 	- Ensure messaging is operator-friendly (focus on how to fix config), not implementation details.  
 	- Deps: Discovery behavior stable and tested.
 

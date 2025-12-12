@@ -264,6 +264,27 @@ wallets:
 
 ## 5. Key Sequences
 
+### 5.0. Pair & Route Discovery (startup)
+- Participants: ConfigService → PairDiscovery (pure helper + Nest service) → Logger.
+- Inputs:
+  - Global token symbol lists from `config.tokens.{base,quote}` (e.g., `WIF`, `PEPE`, `USDT`).
+  - Per-chain inventories from `config.chains[chainId].{tokenList,dexList}` (e.g., `uniswap_v3` on Arbitrum/Base, `quickswap_v3` on Polygon).
+- Behavior:
+  - At startup, the discovery helper builds the Cartesian product of `base × quote` symbols into `symbolPair`s and, for each chain/DEX where both tokens exist, creates venue-level `swapPair`s.
+  - For every `(baseToken, quoteToken)` that appears on at least two venues, it derives one or more arbitrageable routes `(chainM, dexJ) → (chainN, dexK)` and materializes them as `TradingPairConfig` entries (with deterministic `id` such as `WIF~USDT~uniswap_v3+arbitrum~uniswap_v3+base`).
+  - The final `TradingPairConfig[]` universe is sorted deterministically (by `baseToken`, `quoteToken`, `chainM`, `chainN`, `dexJ`, `dexK`) so the same `config.yaml` always yields the same ordered discovery output.
+- Fast-fail rules (discovery aborts startup instead of running an empty loop):
+  - **Fast-fail A – missing token coverage**: any symbol listed in `tokens.base` or `tokens.quote` that never appears in any `chains.*.tokenList` causes an immediate config error (e.g., "Config error (Fast-fail A): tokens [WIF] never appear in any chains.*.tokenList").
+  - **Fast-fail B – no swapPairs**: if no venue ever supports any `(base, quote)` pair (empty `swapPairs`), discovery throws a clear configuration error.
+  - **Fast-fail C – no arbitrargePairs**: if venues exist individually but no `(base, quote)` pair is listed on at least two venues (empty arbitrageable `TradingPairConfig[]`), discovery fails loudly instead of starting an idle loop.
+- Logging & diagnostics:
+  - On success, `PairDiscoveryService` logs a structured "Pair discovery complete" summary including counts (unique base/quote symbols, chains scanned, swapPairs, arbitrargePairs, symbolPairs evaluated) and context arrays (base/quote symbols, chain ids, DEX keys, and a small sample of pair ids).
+  - These logs, together with schema validation in `ConfigService`, make configuration drift (e.g., dropping `WIF` or misconfiguring a DEX) highly visible in tests and at runtime before the orchestrator loop begins.
+- Downstream consumers:
+  - Orchestrator receives the in-memory `TradingPairConfig[]` and iterates it on each tick (Section 5.1) instead of re-deriving routes from raw config.
+  - PriceMonitor and RiskManager consume `TradingPairConfig` objects but do not attempt to recompute discovery; they rely on the startup-discovered universe.
+- For implementation details and test plans, see `docs/task/task-detail/T3b-Pair&route discovery.md`.
+
 ### 5.1. Price loop (1s cadence, dynamic multi-pair discovery)
 - Participants: Orchestrator → ConfigService → PriceMonitor → RiskManager → (maybe execute)
 - Steps:

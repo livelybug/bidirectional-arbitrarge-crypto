@@ -123,6 +123,43 @@ On bootstrap, the `ConfigService` loads `config.yaml`, applies supported
 overrides from `process.env`, and validates everything with Zod. Invalid or
 out-of-range values cause startup to fail with a clear error.
 
+### 3. Pair & route discovery from config
+
+There is **no static trading pair list** in `config.yaml`. Instead, trading
+pairs and their routes are discovered automatically at startup from
+`tokens` and `chains`:
+
+- Discovery takes the Cartesian product of `tokens.base × tokens.quote` and,
+  for each pair (e.g. `WIF/USDT`), looks for chains/DEXes where **both**
+  symbols appear in `chains[chainId].tokenList` and a DEX is listed in
+  `chains[chainId].dexList`.
+- Whenever the same `(base, quote)` pair is available on at least **two
+  venues** (same-chain or cross-chain), the system creates one or more
+  arbitrageable routes `(chainM, dexJ) → (chainN, dexK)` and exposes them to
+  the orchestrator as `TradingPairConfig[]`.
+
+If configuration is inconsistent, discovery fails fast instead of running an
+empty loop. The most common failure modes are:
+
+- **Fast-fail A – missing token coverage**: a symbol is listed in
+  `tokens.base` or `tokens.quote` but never appears in any
+  `chains.*.tokenList`. Fix by either adding the token (symbol + address) to
+  at least one chain’s `tokenList` or removing the symbol from `tokens.*`.
+- **Fast-fail B – no swapPairs**: tokens exist in `tokenList`, but no chain
+  ever lists both base and quote together (so there is nowhere to swap
+  `base ↔ quote`). Fix by ensuring at least one chain has both symbols in its
+  `tokenList` and a DEX in `dexList`.
+- **Fast-fail C – no arbitrargePairs**: venues exist for a `(base, quote)`
+  pair, but there is never more than one venue for any pair, so no
+  arbitrageable routes can be built. Fix by ensuring at least one `(base,
+  quote)` pair is tradable on **two or more** chain/DEX combinations.
+
+On successful startup, you should see a `"Pair discovery complete"` JSON log
+that summarizes how many base/quote symbols, chains, and routes were
+discovered, along with sample pair ids. If `pnpm start` or `pnpm test` fails
+with a discovery error, treat it as a configuration issue in `tokens` or
+`chains` rather than an application bug.
+
 ---
 
 ## Dry-Run vs Live Mode
