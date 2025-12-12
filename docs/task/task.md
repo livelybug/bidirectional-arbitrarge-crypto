@@ -130,6 +130,13 @@
    - Post-Deployment Optimization: Demonstrated profit capture with controlled risk; expanded chain/DEX support without regressions.
 
 ## Todos
-*  Implement and harden the discovery service that builds `TradingPairConfig`+route entries from `tokens` + per-chain `tokenList`/`dexList`, including deterministic ordering and clear failure modes for misconfigurations.
 *  Extend Orchestrator/PriceMonitor to handle multiple candidate routes per token pair (e.g. (J1–K1), (J2–K1), (J1–K2)) and select at most one execution plan per tick based on expected profit and risk constraints.
 *  Add per-pair risk/fee override support (optional fields on `TradingPairConfig`) and ensure RiskManager respects both global and per-pair settings.
+*  Plan per-pair overrides and future extensions:
+   - Keep discovery as the single source of truth for the universe of arbitrageable routes (`TradingPairConfig[]`) derived from `tokens` and `chains`; per-pair overrides should **decorate or constrain** this universe, not introduce new pairs.
+   - Attach optional override fields directly to `TradingPairConfig` (and its config representation) for at least:
+     - `minProfitRateBps` – tighten or loosen the execution threshold for a specific pair relative to global `risk.minProfitRateBps`.
+     - `slippageBps` – per-pair slippage cap that can differ from global `risk.slippageBps`.
+     - `positionCaps` – per-pair caps (reusing `PositionCaps`) that can be stricter than global `risk.positionCaps`.
+   - Treat future candidates (for later phases) as additional optional fields, e.g. per-pair bridge preferences, DEX allowlists/denylists, or per-route pause flags, without changing the core discovery flow.
+   - In Orchestrator/RiskManager, resolve **effective** parameters for each pair via a pure helper, using the rule: "use per-pair override if present, otherwise fall back to global `risk`/`fees`/`ops`", so behavior stays testable and overrides cannot silently widen global limits.
