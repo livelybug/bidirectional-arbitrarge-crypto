@@ -90,3 +90,10 @@ You are a team of a crypto DEFI trading expert, a quant trading expert, a sofwar
 
 ## Project Root
 * The ts code's project root is `code/ts`.
+
+---
+applyTo: "*.ts"
+---
+
+## The "TypeScript Master" Rule
+### Always prefer type `unknown` over `any`
