@@ -88,6 +88,15 @@
 	- Include explicit tests for fast-fail conditions:  
 		- Base/quote symbol configured but missing from all `chains.*.tokenList`.  
 		- Config with tokens present but no eligible dual-venue routes.  
+	- Implementation steps (prep for coding session):  
+		1. **Scaffold spec file** – create `code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts` and import `buildArbitrargePairs`, `tradingPairComparator`, and the relevant discovery types from `./pair-discovery.helper`.  
+		2. **Use typed configs via schema** – import `parseConfig` (or `appConfigSchema`) and `AppConfig` from `src/utils/config/config.schema.ts` / `config.types.ts`; define a local helper `makeInput(raw: Partial<AppConfig>): PairDiscoveryInput` that merges `raw` onto a minimal base config, runs schema validation once, and returns `{ tokens: config.tokens, chains: config.chains }`.  
+		3. **Happy-path: two-chain, single-DEX** – write a test that builds an input with one base, one quote, and two chain & single DEX where both tokens exist; assert `buildArbitrargePairs` returns an empty `pairs` array while diagnostics show `symbolPairsEvaluated === 2`, `swapPairsGenerated === 2`, `arbitrargePairsGenerated === 1`.  
+		4. **Happy-path: multi-chain/multi-DEX routes** – construct a small config with two chains sharing the same `(base, quote)` and two DEX venues at each chain; assert the resulting `TradingPairConfig[]` has the expected length and that a few entries exactly match the expected `(baseToken, quoteToken, chainM, dexJ, chainN, dexK)` and id encoding.  
+		5. **Deterministic ordering** – add a test that calls `buildArbitrargePairs` multiple times with the same logical config but with tokens/chains listed in different orders; assert that all resulting `pairs` arrays are identical and that applying `.sort(tradingPairComparator)` does not change their order.  
+		6. **Fast-fail A/B/C coverage** – add three tests that each start from a valid base config and then: (A) introduce a token symbol absent from all `chains.*.tokenList`, (B) ensure no chain contains both base and quote simultaneously, and (C) ensure only one venue per `(base, quote)` pair; in each case, assert `buildArbitrargePairs` throws and the error message includes the corresponding Fast-fail label (`Fast-fail A/B/C`).  
+		7. **Shape-validation errors** – add tests that pass malformed `PairDiscoveryInput` objects (e.g. missing `tokens.base` / `tokens.quote`, or `chains` set to `null`) directly to `buildArbitrargePairs` and assert the helper throws with the expected `tokens configuration is invalid` / `chains configuration is invalid` messages.  
+		8. **Keep tests framework-agnostic** – ensure the spec does not construct a Nest testing module or use `ConfigService`; all tests should be pure Jest specs operating on in-memory config objects and the exported helper/comparator.  
 	- Deps: Pure helper implementation.
 
 - [P1] Implement integration tests for discovery + ConfigService  
