@@ -31,6 +31,7 @@
      - Initialize TypeScript project; add package.json, linting, logging infra.
      - Deliverable: Repo scaffold; build passes.
      - Success: CI green.
+     - Implementation detail: (docs/task/task-detail/T3- Project_bootstrapping.md)
    - T3b: Pair & route discovery
      - Implement ConfigService-backed discovery of trading pairs and arbitrage routes at startup using:
        - Global base/quote token lists from `tokens` config.
@@ -39,6 +40,7 @@
      - Enforce fast-fail on misconfigured tokens (base/quote tokens missing from all chain `tokenList`s).
      - Deliverable: Discovery service/module + tests; documented contract for Orchestrator and PriceMonitor.
      - Success: Deterministic list of eligible pairs/routes computed at startup; invalid config surfaces as clear errors.
+     - Implementation detail: (docs/task/task-detail/T3b-Pair&route discovery.md)
    - T4: Price monitoring
      - Implement API-based quotes for dynamically discovered trading pairs (base/quote) across configured DEX J/K (same-chain or cross-chain).
      - Integrate with discovery outputs: `PriceMonitor` consumes `TradingPairConfig` to fetch `priceM` and `priceN` per pair/route.

@@ -48,6 +48,15 @@ Priority: **P0 (must-have)**, **P1 (nice-to-have for Phase 1)**, **P2 (later pha
 	- Effort: **M**  
 	- Dependencies: T4.1, T4.2, T5 (minimal quote capability in DEX adapters or temporary stub).  
 	- Description: In `PriceMonitorService`, implement `getPairPrices(pair: TradingPairConfig)` that: (1) resolves the venue on M: `(chainM, dexJ)` and on N: `(chainN, dexK)` from the pair; (2) calls into a DEX quote abstraction to obtain `priceM` and `priceN` (base per quote) for both venues; (3) returns a `Prices` object. Handle same-chain vs cross-chain pairs uniformly. Keep error handling simple (fail fast with a clear error if an adapter or quote is missing); advanced retries are out of scope for Phase 1.
+	- Implementation step: 
+		1. Ensure `PriceMonitorService` implements `PriceMonitor` with `getPairPrices(pair: TradingPairConfig): Promise<Prices>`.
+		2. Inject `DexQuoteProvider` (and `LoggerService`) into `PriceMonitorService` via the constructor, keeping any `ConfigService` usage minimal for T4.3.
+		3. From the input `TradingPairConfig`, build two `DexQuoteRequest`s: one for venue M `(chainM, dexJ)` and one for venue N `(chainN, dexK)` using the pair’s `baseToken` and `quoteToken`.
+		4. Call `DexQuoteProvider.getQuote` for both venues concurrently (e.g. `Promise.all`), without branching for same-chain vs cross-chain pairs.
+		5. Validate that the returned `priceM` and `priceN` are finite, positive numbers; if not, throw a clear error describing the invalid quote and venue.
+		6. Let provider errors bubble but wrap them with contextual information (pair id, chainId, dexKey) so failures are easy to diagnose; do not add retries or fallbacks in this phase.
+		7. Return a `Prices` object `{ priceM, priceN }` and do not mutate the incoming `TradingPairConfig`.
+
 
 - [P0] **T4.4: Define per-tick price fetch strategy for multiple pairs**  
 	- Effort: **S**  
