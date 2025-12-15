@@ -94,6 +94,12 @@ You are a team of a crypto DEFI trading expert, a quant trading expert, a sofwar
 ---
 applyTo: "*.ts"
 ---
+## TS Coding Rules
+```
+end_of_line = lf
+indent_style = space
+indent_size = 2
+```
 
 ## The "TypeScript Master" Rule
 ### Always prefer type `unknown` over `any`
