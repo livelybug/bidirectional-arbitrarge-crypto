@@ -97,3 +97,5 @@ applyTo: "*.ts"
 
 ## The "TypeScript Master" Rule
 ### Always prefer type `unknown` over `any`
+### Rules for Function
+* Avoid adding the async keyword to the function declaration if the function body does not contain any await expressions. 
