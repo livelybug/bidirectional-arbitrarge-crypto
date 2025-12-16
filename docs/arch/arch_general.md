@@ -71,9 +71,19 @@ chains:
     dexList:
       - key: quickswap
         type: generic_v2
+  bsc:
+    rpc: ${BSC_RPC}
+    tokenList:
+      - symbol: USDT
+        address: "0x..."
+      - symbol: WIF
+        address: "0x..."
+    dexList:
+      - key: pancakeswap_v3
+        type: generic_v3
 
 export interface ChainDexConfig {
-  key: string;         // e.g., 'uniswap_v3', 'quickswap', 'velodrome_v2'
+  key: string;         // e.g., 'uniswap_v3', 'quickswap', 'velodrome_v2', 'pancakeswap_v3'
   type: 'uniswap_v3' | 'velodrome_v2' | 'generic_v2' | 'generic_v3';
 }
 

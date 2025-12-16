@@ -48,8 +48,8 @@
      - Deliverable: price_monitor.ts with dual-venue fetch per pair + rate-limit handling.
      - Success: Stable price feed, <300ms avg fetch per chain/DEX; supports multiple pairs concurrently.
    - T5: DEX integrations
-     - Uniswap V3 swaps (buy/sell with slippage cap); extend for Velodrome.
-     - Deliverable: dex/uniswap_v3.ts, dex/velodrome.ts with unit tests.
+     - Uniswap V3 swaps (buy/sell with slippage cap); extend for pancakeswap.
+     - Deliverable: dex/uniswap_v3.ts, dex/pancakeswap.ts with unit tests.
      - Success: Accurate quote vs execution delta within configured slippage (≤3%).
    - T6: Bridge integration
      - Stargate bridging (TokenA, USDT) with fee estimation and settlement polling.
