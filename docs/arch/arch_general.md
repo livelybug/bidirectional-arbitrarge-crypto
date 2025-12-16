@@ -12,6 +12,7 @@
   - Fetches prices for a given trading pair (base/quote) on its configured DEX J (chain M) and DEX K (chain N). DEX J and DEX K may be on the same chain (same-chain DEX-to-DEX arbitrage) or different chains (cross-chain arbitrage). Delegates to a `DexQuoteProvider` registry keyed by `(chainId, dexKey)` so that it never talks to concrete adapters directly. Prefers API/SDK; supports fallback/sanity checks.
 -- DEX Adapters (src/dex/)
   - One adapter instance per (chain, dexKey), e.g. `UniswapV3Service` for `uniswap_v3` on Arbitrum/Base, `PancakeswapV3Service` for `pancakeswap_v3` on BSC, `VelodromeV2Service` for `velodrome_v2` on Optimism, etc. Adapters are registered in `DexModule` and exposed via `DEX_*` tokens; the `DexQuoteProvider` registry uses these to resolve the correct adapter for each `(chainId, dexKey)` pair. Responsible for quoting and executing swaps (quote↔base) with slippage caps and balance queries.
+  - For the DEX plug-in pattern and concrete steps to add new adapters, see `docs/task/task-detail/T5-DEX_integrations.md` ("How to add a new DEX").
 - Bridge Adapter (src/bridge/stargate.ts)
   - Estimate fees; bridge TokenA and USDT; poll settlement; provide transferId/status.
 -- RiskManager (src/risk_control.ts)
