@@ -3,37 +3,37 @@
 Effort scale: **XS / S / M / L / XL**  
 Priority: **P0 (must-have)**, **P1 (nice-to-have for Phase 1)**, **P2 (later)**
 
-- [ ] **[P0][S] Confirm DEX adapter contract, registry, and config wiring**  
+- [x] **[P0][S] Confirm DEX adapter contract, registry, and config wiring**  
 	**Description:** Validate that `DexAdapter` in `dex-adapter.interface.ts` covers all quote/swap/balance operations needed by Orchestrator and RiskManager (buy/sell, slippage, balances). Ensure `DexModule` exports (`DEX_UNISWAP_V3`, `DEX_PANCAKESWAP_V3`, and any additional DEX tokens) match `chains.*.dexList.key` values and `TradingPairConfig.dexJ/dexK`. Confirm that the PriceMonitor/DexQuoteProvider wiring uses a simple adapter registry keyed by `(chainId, dexKey)` so that new DEXs can be plugged in without touching orchestrator or risk logic.  
 	**Dependencies:** T2 (architecture interfaces), T3b (discovery types), `ConfigService`, `TradingPairConfig`, `DexModule`, `PriceMonitorService`.  
 	**Effort:** S
 
-- [ ] **[P0][M] Harden Uniswap V3 adapter for quotes and swaps**  
+- [x] **[P0][M] Harden Uniswap V3 adapter for quotes and swaps**  
 	**Description:** Evolve `UniswapV3Service` to be production-lean: keep current deterministic stub behavior but clearly separate (a) pure quote path (for `PriceMonitor` / risk checks) from (b) swap path (execution), and make sure it fully honours the `DexAdapter` contract (slippageBps input, base/quote direction, numeric safety). Add structured logs (`debug` for estimates, `info` for swaps) including `chain`, `dexKey`, `baseToken`, `quoteToken`, amounts, and derived prices. Treat Uniswap as the canonical reference implementation for other DEX adapters.  
 	**Dependencies:** Previous task; `dex/uniswap-v3.service.ts`, `LoggerService`, `ConfigService.getChainsConfig()`.  
 	**Effort:** M
 
-- [ ] **[P0][M] Design and stub Pancakeswap adapter as second primary DEX**  
+- [x] **[P0][M] Design and stub Pancakeswap adapter as second primary DEX**  
 	**Description:** Introduce a `PancakeswapV3Service` class implementing `DexAdapter` with behavior initially mirroring `UniswapV3Service` (deterministic price derivation and stubbed swaps/balances). Wire it into `DexModule` with a dedicated token (e.g. `DEX_PANCAKESWAP_V3`) and document required `chains.*.dexList` entries and `TradingPairConfig.dexJ/dexK` values. Ensure its logging and error semantics match Uniswap so it can be used interchangeably by PriceMonitor and Orchestrator.  
 	**Dependencies:** Existing `DexAdapter` design, `dex.module.ts`, `config.yaml` chains.dexList, task T5 goal (“extend for pancakeswap”).  
 	**Effort:** M
 
-- [ ] **[P1][M] Harden Velodrome V2 adapter as an additional DEX example**  
+- [x] **[P1][M] Harden Velodrome V2 adapter as an additional DEX example**  
 	**Description:** Align `VelodromeV2Service` behavior and logging with `UniswapV3Service`: consistent price derivation semantics, slippageBps handling, and structured logs for estimate/swap/balance calls. Ensure `resolveChain('velodrome_v2')` matches at least one `chains.*.dexList.key` in `config.yaml` and that misconfigurations fail fast with clear errors. Treat Velodrome as a template for future DEX integrations beyond Uniswap and PancakeSwap.  
 	**Dependencies:** Uniswap/PancakeSwap tasks; `dex/velodrome-v2.service.ts`, `config.yaml` chains.dexList, T3b fast-fail rules.  
 	**Effort:** M
 
-- [ ] **[P0][S] Implement and wire DEX balance access for runtime state**  
+- [x] **[P0][S] Implement and wire DEX balance access for runtime state**  
 	**Description:** Confirm `getBalanceBase` and `getBalanceQuote` implementations on Uniswap and PancakeSwap adapters (and any additional DEXs) can be used by Orchestrator/RiskManager to build `PairRuntimeState` (even if stubbed initially). Ensure logging includes `chain`, token symbol, and adapter key, and that failures are surfaced as meaningful errors (not silently returning zero).  
 	**Dependencies:** `DexAdapter` interface, `PairRuntimeState` in `common/types.ts`, `WalletService` (from T9), T7/T8 design for runtime state.  
 	**Effort:** S
 
-- [ ] **[P0][M] Integrate DEX adapters with PriceMonitor quote abstraction**  
+- [x] **[P0][M] Integrate DEX adapters with PriceMonitor quote abstraction**  
 	**Description:** Provide or extend a `DexQuoteProvider` implementation that delegates to the appropriate `DexAdapter` based on `DexQuoteRequest.chainId` and `dexKey`, using `UniswapV3Service` / `PancakeswapV3Service` (and optionally `VelodromeV2Service`) under the hood. Ensure mapping from `TradingPairConfig` → `DexQuoteRequest` (already used in `PriceMonitorService`) resolves to the right adapter and that missing adapters fail fast with clear errors. Keep the lookup logic generic so adding a new DEX only requires registering its adapter/token, not changing PriceMonitor code.  
 	**Dependencies:** T4.3 (PriceMonitor core), `PriceMonitorService`, `DexAdapter`, `DEX_*` tokens, `ConfigService.getChainsConfig()`.  
 	**Effort:** M
 
-- [ ] **[P0][M] Unit tests for Uniswap V3 and PancakeSwap adapters (and templates for others)**  
+- [x] **[P0][M] Unit tests for Uniswap V3 and PancakeSwap adapters (and templates for others)**  
 	**Description:** Add Jest specs under `src/dex/` (e.g. `uniswap-v3.service.spec.ts`, `pancakeswap-v3.service.spec.ts`) that construct adapters with mocked `ConfigService` and `LoggerService`. Cover: deterministic quote outputs for given (base, quote, amount); correct handling of invalid numeric inputs; fast-fail behavior when `config.chains` does not advertise the dex key; and simple swap receipt shape (`txHash`). Use these tests as the baseline pattern for additional DEX adapters such as Velodrome.  
 	**Dependencies:** Uniswap/PancakeSwap tasks; Jest setup from T3; `ConfigService`, `LoggerService`.  
 	**Effort:** M
