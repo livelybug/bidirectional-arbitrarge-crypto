@@ -8,10 +8,10 @@
 ## 2. Components & Responsibilities
 -- Orchestrator (src/main.ts)
   - Runs 1s loop; iterates over all configured trading pairs and their associated route (chainM, dexJ) → (chainN, dexK); for each pair, fetches prices on both venues (same-chain or cross-chain), computes forward/backward profitability, delegates to RiskManager; chooses at most one execution plan per tick; executes the plan; handles reconciliation and fund cycling.
-- PriceMonitor (src/price_monitor.ts)
-  - Fetches prices for a given trading pair (base/quote) on its configured DEX J (chain M) and DEX K (chain N). DEX J and DEX K may be on the same chain (same-chain DEX-to-DEX arbitrage) or different chains (cross-chain arbitrage). Prefers API/SDK; supports fallback/sanity checks.
-- DEX Adapters (src/dex/)
-  - One adapter instance per (chain, dexKey), e.g. uniswap_v3 on Arbitrum, uniswap_v3 on Base, quickswap on Polygon, etc. Responsible for quoting and executing swaps (quote↔base) with slippage caps and balance queries.
+-- PriceMonitor (src/price_monitor.ts)
+  - Fetches prices for a given trading pair (base/quote) on its configured DEX J (chain M) and DEX K (chain N). DEX J and DEX K may be on the same chain (same-chain DEX-to-DEX arbitrage) or different chains (cross-chain arbitrage). Delegates to a `DexQuoteProvider` registry keyed by `(chainId, dexKey)` so that it never talks to concrete adapters directly. Prefers API/SDK; supports fallback/sanity checks.
+-- DEX Adapters (src/dex/)
+  - One adapter instance per (chain, dexKey), e.g. `UniswapV3Service` for `uniswap_v3` on Arbitrum/Base, `PancakeswapV3Service` for `pancakeswap_v3` on BSC, `VelodromeV2Service` for `velodrome_v2` on Optimism, etc. Adapters are registered in `DexModule` and exposed via `DEX_*` tokens; the `DexQuoteProvider` registry uses these to resolve the correct adapter for each `(chainId, dexKey)` pair. Responsible for quoting and executing swaps (quote↔base) with slippage caps and balance queries.
 - Bridge Adapter (src/bridge/stargate.ts)
   - Estimate fees; bridge TokenA and USDT; poll settlement; provide transferId/status.
 -- RiskManager (src/risk_control.ts)
@@ -147,6 +147,22 @@ export interface ExecutionPlan {
 export interface PriceMonitor {
   // Fetch price for a specific pair on one side (M or N), or both at once.
   getPairPrices(pair: TradingPairConfig): Promise<Prices>;
+}
+
+export interface DexQuoteRequest {
+  chainId: ChainId;
+  dexKey: string;      // e.g., 'uniswap_v3', 'pancakeswap_v3', 'velodrome_v2'
+  baseToken: string;
+  quoteToken: string;
+}
+
+export interface DexQuoteProvider {
+  /**
+   * Return a price expressed as base-per-quote for the given venue and pair.
+   * Implemented as a thin registry over concrete DEX adapters, keyed by
+   * `(chainId, dexKey)` so that PriceMonitor stays decoupled from adapter types.
+   */
+  getQuote(request: DexQuoteRequest): Promise<number>;
 }
 
 export interface DexAdapter {

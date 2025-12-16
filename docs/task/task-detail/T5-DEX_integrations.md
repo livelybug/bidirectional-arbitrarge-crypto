@@ -43,7 +43,7 @@ Priority: **P0 (must-have)**, **P1 (nice-to-have for Phase 1)**, **P2 (later)**
 	**Dependencies:** T4.6 (integration test patterns), `PairDiscoveryService`, `DexModule`, `PriceMonitorService`.  
 	**Effort:** M
 
-- [ ] **[P1][S] Align T5 docs and architecture references with concrete adapters**  
+- [x] **[P1][S] Align T5 docs and architecture references with concrete adapters**  
 	**Description:** Update `docs/task/task.md` (T5 section) and `arch_general.md` DEX adapter descriptions to mention `UniswapV3Service`, `PancakeswapV3Service`, and additional examples such as `VelodromeV2Service`, ensuring naming matches `chains.*.dexList.key` and token constants in `common/tokens.ts`. Clarify that T5 provides both quote and execution paths with slippage caps and that PriceMonitor uses the quote path only.  
 	**Dependencies:** All prior T5 subtasks; existing architecture docs; `common/tokens.ts`.  
 	**Effort:** S

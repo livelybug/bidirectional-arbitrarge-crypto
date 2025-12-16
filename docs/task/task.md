@@ -48,7 +48,7 @@
      - Deliverable: price_monitor.ts with dual-venue fetch per pair + rate-limit handling.
      - Success: Stable price feed, <300ms avg fetch per chain/DEX; supports multiple pairs concurrently.
    - T5: DEX integrations
-     - Uniswap V3 swaps (buy/sell with slippage cap); extend for pancakeswap.
+     - Uniswap V3 swaps (buy/sell with slippage cap) and PancakeSwap V3 as primary DEX adapters, with Velodrome V2 as an additional template venue. PriceMonitor consumes quotes via a `(chainId, dexKey)` adapter registry (DexQuoteProvider) and uses only the quote path; execution paths share the same adapters with slippage caps enforced.
      - Deliverable: dex/uniswap_v3.ts, dex/pancakeswap.ts with unit tests.
      - Success: Accurate quote vs execution delta within configured slippage (≤3%).
    - T6: Bridge integration
