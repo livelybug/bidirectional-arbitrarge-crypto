@@ -248,6 +248,9 @@ ops:
   loopIntervalMs: 1000
   bridgeBackPct: 0.92
   gasReservePctOfProfit: 0.03
+  # Max time to wait for a single price request
+  # before treating it as a timeout (ms).
+  priceRequestTimeoutMs: 5000
 logging:
   level: info
   json: true
