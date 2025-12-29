@@ -31,7 +31,15 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with `.specify/memory/constitution.md`:
+
+- [ ] Code Quality: Type safety (`unknown` not `any`), immutability, proper async/await usage
+- [ ] Testing: TDD workflow, coverage for critical paths (price calculations, risk control, DEX/bridge operations)
+- [ ] User Experience: Dry-run mode support, structured logging with operation contexts
+- [ ] Performance: Trading loop within `loopIntervalMs`, price fetching <3s, RPC reliability
+- [ ] Security: Key management (no hardcoded keys), input validation, risk control integration
+
+Document any violations in the Complexity Tracking table below with justification.
 
 ## Project Structure
 
