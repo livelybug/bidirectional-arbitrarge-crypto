@@ -22,7 +22,8 @@ validation.
 - `src/bridge` – Bridge adapter interface + Stargate stub.
 - `src/risk_control` – Risk configuration and `RiskManagerService`.
 - `src/utils/config` – Typed config loader (`config.yaml` + `.env`), schema
-  validation, and env merge helper.
+  validation, env merge helper, and a small CLI to inspect the effective
+  merged configuration.
 - `src/utils/logger` – JSON `LoggerService` with opId (correlation id)
   support.
 - `src/utils/wallet` – Wallet / signer abstraction (no secrets committed).
@@ -119,11 +120,40 @@ be overridden via environment variables, for example (see
 - Secrets: `PRIVATE_KEY`, `WALLET_PRIVATE_KEY`, `STARGATE_API_KEY`,
   `LZ_API_KEY` (do not commit real values).
 
-On bootstrap, the `ConfigService` loads `config.yaml`, applies supported
-overrides from `process.env`, and validates everything with Zod. Invalid or
-out-of-range values cause startup to fail with a clear error.
+On bootstrap, the `ConfigService`:
 
-### 3. Pair & route discovery from config
+- Resolves a base YAML config (`config.yaml` or the file pointed to by
+  `APP_CONFIG_PATH`).
+- Optionally applies an environment-specific overlay
+  (`config.dev.yaml`, `config.test.yaml`, or `config.prd.yaml`) based on
+  `APP_ENV` (`dev` if unset).
+- Applies supported overrides from `process.env`.
+- Validates everything with Zod.
+
+Invalid or out-of-range values cause startup to fail with a clear error.
+
+### 3. Environments (`APP_ENV`) and overlays
+
+Configuration is environment-aware via a small set of env identifiers:
+
+- `APP_ENV=dev` – local development (default if `APP_ENV` is unset).
+- `APP_ENV=test` – automated tests / CI.
+- `APP_ENV=prd` – production.
+
+For each environment, `ConfigService` looks for an overlay file next to
+`config.yaml`:
+
+- `config.dev.yaml` – development overrides (e.g. verbose logging,
+  testnet RPC URLs, dev wallet paths).
+- `config.test.yaml` – test overrides (e.g. quieter logs, CI-friendly
+  loop intervals).
+- `config.prd.yaml` – production overrides (e.g. production RPC URLs,
+  production wallet keystore path).
+
+Only the fields that differ from the base config need to be specified in
+these overlay files; structure and defaults remain in `config.yaml`.
+
+### 4. Pair & route discovery from config
 
 There is **no static trading pair list** in `config.yaml`. Instead, trading
 pairs and their routes are discovered automatically at startup from
@@ -234,6 +264,26 @@ metadata.
 
 Logs can be redirected to files under `logs/` (which is gitignored) using
 your process manager or shell redirection.
+
+### Inspect the effective configuration
+
+To help operators and developers debug configuration issues, you can print
+the effective merged config (base YAML + overlay + env overrides, with
+wallet fields redacted) for a given environment:
+
+```bash
+cd code/ts
+
+# Example: print dev config (APP_ENV defaults to dev when unset)
+pnpm config:print
+
+# Example: print test or production config
+APP_ENV=test pnpm config:print
+APP_ENV=prd pnpm config:print
+```
+
+The output is JSON and includes the resolved `appEnv` plus the redacted
+`config` object.
 
 ---
 

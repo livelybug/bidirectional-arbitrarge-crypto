@@ -91,6 +91,13 @@ Priority: **P0 (must-have)**, **P1 (nice-to-have for Phase 1)**, **P2 (later pha
 	- Effort: **S**  
 	- Dependencies: T4.3, `LoggerService`.  
 	- Description: In `PriceMonitorService`, add structured logs for: start/end of price fetch per pair, total duration, and any failures. Keep logs at a level compatible with the existing logging strategy (`info` for success summaries, `warn`/`error` for failures). Optionally record simple timing metrics (e.g., log duration fields) to support the “<300ms avg fetch per chain/DEX” success criterion.
+	- Implementation steps (prep for coding session):  
+		1. **Add per-pair timing in `getPairPrices`** – At the top of `getPairPrices`, capture a `startMs = Date.now()` and derive `durationMs = Date.now() - startMs` on every return or throw path so that each price fetch for a given `pair.id` has an associated latency measurement in milliseconds.
+		2. **Log start/end events for successful fetches** – Emit a lightweight “start” log (e.g. `debug` level) when a pair-price fetch begins with `pairId` and venue identifiers, and an `info`-level “success” log when both quotes are validated, including at minimum `pairId`, `durationMs`, `priceM`, `priceN`, and the `(chainM, dexJ)` / `(chainN, dexK)` venues in the structured context.
+		3. **Include timing on all failure logs** – For both validation failures (invalid `priceM`/`priceN`) and provider/adapter errors caught in the `try/catch`, extend the existing `logger.error` payloads to also carry `durationMs` (time until failure) alongside `pairId`, the relevant venue or requests, and the error message so that slow or failing venues can be distinguished from fast successes.
+		4. **Add batch-level summary in `getPricesForPairs`** – Optionally capture `batchStartMs = Date.now()` at the beginning of `getPricesForPairs` and log a single `info`-level summary when all workers complete, with fields such as `totalPairs`, `successCount`, `errorCount`, `maxConcurrent`, and `durationMs` (batch wall-clock time), without duplicating per-pair details already logged by `getPairPrices`.
+		5. **Keep logging configuration-agnostic for now** – Do not introduce new config keys or sampling logic in T4.7; rely on existing `LoggerService` level controls and keep the added logs small and structured so they can be filtered or down-leveled later when T14 (observability) or T4.8 introduces more advanced behavior.
+		6. **Align or extend unit tests where appropriate** – Once logging and timing fields are wired, review `price-monitor.service.spec.ts` to ensure that new logs do not break existing expectations (e.g. error call counts) and, if valuable, add a small number of assertions that confirm `durationMs` is present and numeric in at least one success and one failure scenario.
 
 - [P1] **T4.8: Config-driven timeouts for price requests**  
 	- Effort: **M**  
@@ -106,11 +113,30 @@ Priority: **P0 (must-have)**, **P1 (nice-to-have for Phase 1)**, **P2 (later pha
 
 ### Out of Scope / Later Phases (Not Phase 1)
 
-- Full **rate-limit handling** and adaptive request scheduling across many DEXes and chains (tie-in with T12: Performance & reliability).
-- **Circuit-breakers** and advanced retry/backoff policies for flaky DEX or RPC providers.
-- **Price caching** and cross-tick reuse of quotes to reduce load.
-- Integration with external **aggregator APIs** or secondary data sources beyond direct DEX adapters.
-- Rich **metrics export** (Prometheus, dashboards) beyond basic logging—these relate to T14 (Observability).
+- Full rate-limit handling & adaptive scheduling
+
+Covered by: T12: Performance & reliability (“rate-limit compliance”, 1s loop load tests, reliability).
+Status: Conceptually included; you can treat detailed per-DEX rate-limiters and adaptive scheduling as concrete subtasks under T12.
+
+- Circuit-breakers and advanced retry/backoff policies
+
+Covered by: Primarily T12: Performance & reliability (“error handling, retries/backoff”) and secondarily T17: Safety enhancements (“API redundancy; fail-safe pausing”).
+Status: Retries/backoff are explicit in T12; circuit-breakers/fail-safe pausing are a natural T12+T17 combo, even though “circuit-breaker” isn’t named.
+
+- Price caching and cross-tick reuse of quotes
+
+Covered by: Implicitly T12: Performance & reliability (performance of the 1s loop, load reduction).
+Status: Not called out verbatim in task.md, but caching is a straightforward T12 subtask to hit performance targets and lower API pressure.
+
+- Integration with external aggregator APIs / secondary data sources
+
+Covered by: Best mapped to T16: Supported platforms expansion (adding more venues/types of liquidity sources) with some overlap to T12 (reliability through redundancy).
+Status: Not explicitly mentioned (Hop/Synapse, Velodrome, Sushi/QuickSwap are listed instead), but aggregators are a natural extension of “supported platforms expansion”.
+
+- Rich metrics export (Prometheus, dashboards)
+
+Covered by: T14: Observability (“metrics for executions, fees, profits, bridge durations” and dashboards).
+Status: Clearly included; Prometheus-style metrics + dashboards fit squarely inside T14.
 
 These items should be revisited after Phase 1 once basic price monitoring is wired through Orchestrator and validated in integration tests.
 
