@@ -65,9 +65,9 @@
      - Maintain 1s loop semantics for price fetching while allowing multiple pairs/routes to be evaluated per tick.
      - Deliverable: price_monitor.ts with dual-venue fetch per pair + rate-limit handling.
     - Success: Stable price feed, <300ms avg fetch per chain/DEX; supports multiple pairs concurrently.
-    - Phase 2: On-chain price monitoring (testnets → guarded mainnet)
-       - Wire `PriceMonitor` to real DEX/read-only RPC calls (e.g. Uniswap V3 / PancakeSwap V3 pools) on at least one supported testnet per chain, verifying prices, latencies, and error modes against FRD assumptions.
-       - Verification: run the price loop against live testnet pools for a representative `TradingPairConfig[]`, capture structured logs and sample outputs, and compare against a Python or SDK reference implementation; later, repeat read-only queries on mainnet with production RPCs.
+    - Phase 2: On-chain price monitoring
+       - Wire `PriceMonitor` to real DEX/read-only RPC calls (e.g. Uniswap V3 / PancakeSwap V3 pools) on at least one supported test env per chain, verifying prices, latencies, and error modes against FRD assumptions.
+       - Verification: run the price loop against live test env pools for a representative `TradingPairConfig[]`, capture structured logs and sample outputs, and compare against a Python or SDK reference implementation; later, repeat read-only queries on mainnet with production RPCs.
   - T5: DEX integrations
      - Uniswap V3 swaps (buy/sell with slippage cap) and PancakeSwap V3 as primary DEX adapters, with Velodrome V2 as an additional template venue. PriceMonitor consumes quotes via a `(chainId, dexKey)` adapter registry (DexQuoteProvider) and uses only the quote path; execution paths share the same adapters with slippage caps enforced.
      - Deliverable: dex/uniswap_v3.ts, dex/pancakeswap.ts with unit tests.
@@ -141,7 +141,7 @@
      - Deliverable: Features + documentation.
      - Success: Reduced failure rates; faster recovery.
 
-5. Deliverables
+1. Deliverables
    - D1: Final FRD and architecture docs (T1–T2).
    - D2: TS codebase modules (T3–T9).
    - D3: Test suite and simulation reports (T10–T12).
@@ -150,7 +150,7 @@
    - D6: Tuning and expansion updates (T15–T16).
    - D7: Safety features and docs (T17).
 
-6. Success Criteria
+2. Success Criteria
    - Planning & Design: Approved FRD; clear interfaces; no open questions.
    - Development: CI green; modules pass unit tests; orchestrator performs full cycle.
    - Testing & Validation: ≥80% coverage; backtests consistent with expected PnL; stable 24h soak.
