@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Developer Docs
+* The developer document is in folder `docs/`.
+  * The architecture doc is `docs/arch/arch_general.md`.
+  * The readme is `docs/readme/README.ts.md`.
+
 ## Project Root
 
 The TypeScript codebase is located in `code/ts`. All commands below should be run from that directory.

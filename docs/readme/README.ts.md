@@ -192,6 +192,16 @@ with a discovery error, treat it as a configuration issue in `tokens` or
 
 ---
 
+## Wallet matrix of environment (dev / test / prd)
+| Env  | Keys & addresses                                                                 | RPC configuration                                                              | Allowed secret sources                                 | Usage rules |
+|------|----------------------------------------------------------------------------------|-------------------------------------------------------------------------------|--------------------------------------------------------|------------|
+| dev  | Raw private key via env (`DEV_WALLET_PK`) **allowed**; encrypted keystore optional. | RPC endpoints may be public/test or free-tier; API keys in env only.          | Env vars for keys and RPC API keys; optional local keystore. | Small funds only; intended for local development and experimentation. |
+| test | **Preferred:** encrypted keystore in `./wallets/test/…` referenced by config; read-only observer keys acceptable. | Dedicated testnet RPC endpoints; URLs in config, sensitive keys in env. | Env vars + encrypted keystores; raw private keys strongly discouraged. | Used for pre-production validation on testnets with non-production funds. |
+| prd  | **Only:** encrypted keystore(s) in `./wallets/prod/…`; no raw private keys; one hot trading wallet per env for now. | Dedicated production RPC endpoints; host/chain in config, API keys in env only. | Env/secret manager + keystores; no secrets from CLI args or files in git. | Real capital; cold storage stays outside the bot; manual funding/withdrawal. |
+
+
+---
+
 ## Dry-Run vs Live Mode
 
 The orchestrator loop is designed to support both simulation and real
