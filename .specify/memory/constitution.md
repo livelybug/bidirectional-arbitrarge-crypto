@@ -1,22 +1,3 @@
-<!--
-SYNC IMPACT REPORT
-==================
-Version Change: Initial → 1.0.0
-Modified Principles: N/A (initial version)
-Added Sections:
-  - Code Quality & Type Safety
-  - Testing Excellence (NON-NEGOTIABLE)
-  - User Experience & Observability
-  - Performance & Reliability Standards
-  - Security & Financial Safety
-Removed Sections: N/A
-Templates Updated:
-  ✅ .specify/templates/plan-template.md - Constitution Check section verified
-  ✅ .specify/templates/spec-template.md - Requirements alignment verified
-  ✅ .specify/templates/tasks-template.md - Task organization verified
-Follow-up TODOs: None
--->
-
 # Bidirectional Arbitrage Trading Bot Constitution
 
 ## Core Principles
@@ -53,24 +34,21 @@ Follow-up TODOs: None
 
 ### IV. Performance & Reliability Standards
 
-- **Trading Loop Performance**: The orchestrator loop MUST complete within configurable `ops.loopIntervalMs`.
-- **Price Freshness**: Price fetching MUST complete within 2-3 seconds per DEX. Stale prices lead to failed transactions or slippage.
-- **Memory Management**: Avoid memory leaks in long-running processes. Immutable data structures help, but circular references in caching or event handlers must be avoided.
+- **Memory Management**: Avoid memory leaks in long-running processes. Immutable data helps, circular references must be cautious.
 - **RPC Reliability**: All blockchain RPC calls MUST handle:
   - Timeouts and retries with exponential backoff
   - Rate limiting (HTTP 429) responses
   - Network failures
   - Malformed responses (validate all RPC results)
-- **Gas Estimation**: All transaction estimations MUST be accurate. Underestimation leads to failed transactions; overestimation reduces profitability.
+- **Gas Estimation**: All transaction estimations MUST be accurate.
 
 ### V. Security & Financial Safety
 
 - **Key Management**: Private keys MUST NEVER be hardcoded or committed to git. Keys are stored in `wallets/` directory (gitignored). Config references key files by name, not content.
 - **Transaction Safety**: Before ANY live transaction:
-  - Verify all parameters (addresses, amounts, slippage tolerances)
+  - Verify all parameters
   - Double-check chain IDs (prevent mainnet vs testnet confusion)
   - Validate gas estimates are reasonable
-  - Ensure dry-run mode has been tested successfully
 - **Input Validation**: ALL external inputs (API responses, RPC results, user configs) MUST be validated before use.
 - **Error Recovery**: The system MUST handle partial failures gracefully:
   - If a DEX fetch fails, log and continue with other DEXs
@@ -78,24 +56,16 @@ Follow-up TODOs: None
   - If wallet balance is insufficient, skip that trading pair
 
 ## Architecture Constraints
-
-### Adapter Pattern Enforcement
-
-All external integrations MUST follow the adapter pattern:
-
-- **DEX Adapter**: Standardized interface in `src/dex/dex-adapter.interface.ts`
-- **Bridge Adapter**: Standardized interface in `src/bridge/bridge-adapter.interface.ts`
-- **Wallet Adapter**: Standardized interface in `src/utils/wallet/wallet.interface.ts`
+* The source code is in folder `code/ts/`.
+* The developer created document is in folder `docs/`.
 
 ### Configuration System
 
 Configuration MUST follow the multi-layer loading system:
 
 1. Base YAML file: `config.yaml` (or via `APP_CONFIG_PATH` env var)
-2. Environment overlay: `config.{ENV}.yaml` (selected via `NODE_ENV`)
+2. Environment overlay: `config.{ENV}.yaml` (selected via `APP_ENV`)
 3. Environment variable merging: `MY__KEY__SUBKEY=value` format
-
-All config MUST be validated with Zod schemas and frozen on load to prevent runtime mutations.
 
 ## Development Workflow
 
@@ -105,7 +75,6 @@ All pull requests MUST:
 
 - Pass all tests (unit, integration, and slow integration tests if applicable)
 - Pass linting (`pnpm run lint`) with no errors
-- Have clear commit messages explaining the change
 
 ### Testing Gates
 
@@ -127,9 +96,8 @@ Before deploying to production:
 
 This constitution supersedes all other development practices. Amendments require:
 
-1. Documentation of the proposed change and rationale
-2. Migration plan for existing code that violates the new principle
-3. Update to this document with version bump
+1. Migration plan for existing code that violates the new principle
+2. Update to this document with version bump
 
 ### Compliance Review
 
