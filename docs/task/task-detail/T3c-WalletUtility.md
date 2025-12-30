@@ -83,12 +83,7 @@ Priority: **P0 (must-have)**, **P1 (nice-to-have for Phase 1)**, **P2 (later)**
 
 #### 2. Environment matrix (dev / test / prd)
 
-| Env  | Keys & addresses                                                                 | RPC configuration                                                              | Allowed secret sources                                 | Usage rules |
-|------|----------------------------------------------------------------------------------|-------------------------------------------------------------------------------|--------------------------------------------------------|------------|
-| dev  | Raw private key via env (`DEV_WALLET_PK`) **allowed**; encrypted keystore optional. | RPC endpoints may be public/test or free-tier; API keys in env only.          | Env vars for keys and RPC API keys; optional local keystore. | Small funds only; intended for local development and experimentation. |
-| test | **Preferred:** encrypted keystore in `./wallets/test/…` referenced by config; read-only observer keys acceptable. | Dedicated testnet RPC endpoints; URLs in config, sensitive keys in env. | Env vars + encrypted keystores; raw private keys strongly discouraged. | Used for pre-production validation on testnets with non-production funds. |
-| prd  | **Only:** encrypted keystore(s) in `./wallets/prod/…`; no raw private keys; one hot trading wallet per env for now. | Dedicated production RPC endpoints; host/chain in config, API keys in env only. | Env/secret manager + keystores; no secrets from CLI args or files in git. | Real capital; cold storage stays outside the bot; manual funding/withdrawal. |
-
+Refer to `docs/readme/README.ts.md` -> `Wallet matrix of environment`
 For v1, there is **exactly one active hot trading wallet per environment** (future roles like funding / observer / cold wallets can be added later in T3c.2/T3c.9).
 
 #### 3. How config references wallets and RPC endpoints

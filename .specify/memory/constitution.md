@@ -56,8 +56,7 @@
   - If wallet balance is insufficient, skip that trading pair
 
 ## Architecture Constraints
-* The source code is in folder `code/ts/`.
-* The developer created document is in folder `docs/`.
+* The ts codebase is in folder `code/ts/`.
 
 ### Configuration System
 
