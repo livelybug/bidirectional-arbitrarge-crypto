@@ -190,6 +190,8 @@ discovered, along with sample pair ids. If `pnpm start` or `pnpm test` fails
 with a discovery error, treat it as a configuration issue in `tokens` or
 `chains` rather than an application bug.
 
+For more detail of the pair discovery flow, refer to [PairDiscovertFLow](<../task/task-detail/T3b-Pair&route discovery.md#arbitrarge-pairs-discovery-flow>)
+
 ---
 
 ## Wallet matrix of environment (dev / test / prd)

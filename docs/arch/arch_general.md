@@ -313,7 +313,7 @@ wallets:
 - Downstream consumers:
   - Orchestrator receives the in-memory `TradingPairConfig[]` and iterates it on each tick (Section 5.1) instead of re-deriving routes from raw config.
   - PriceMonitor and RiskManager consume `TradingPairConfig` objects but do not attempt to recompute discovery; they rely on the startup-discovered universe.
-- For implementation details and test plans, see `docs/task/task-detail/T3b-Pair&route discovery.md` -> `Arbitrarge Pairs Discovery Flow`.
+- For implementation details and test plans, see [PairDiscovertFLow](<../task/task-detail/T3b-Pair&route discovery.md#arbitrarge-pairs-discovery-flow>).
 
 ### 5.1. Price loop (1s cadence, dynamic multi-pair discovery)
 - Participants: Orchestrator → ConfigService → PriceMonitor → RiskManager → (maybe execute)

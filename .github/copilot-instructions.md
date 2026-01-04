@@ -3,6 +3,7 @@ applyTo: "**"
 ---
 
 # General instructions
+* Be very terse and concise.
 * Please think deeply and think twice.
 
 ## Clarification Phase
