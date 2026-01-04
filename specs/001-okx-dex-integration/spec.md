@@ -14,6 +14,12 @@
 - **Q**: How should aggregator routes be represented in the existing `TradingPairConfig` structure? → **A**: Reuse existing `dexJ/dexK` fields to store aggregator keys (e.g., `okx`), interpreting `(chainId, dexKey)` as a generic "venue key" that may be either a native DEX key or an aggregator key
 - **Q**: Should "Balance Queries" be higher priority than "Swap Execution"? → **A**: Yes, Balance Queries (P3) should be higher priority than Swap Execution (P4) because balance validation is a prerequisite for safe execution, follows progressive complexity (read-only before state-changing), and enables accurate position sizing before attempting swaps
 
+### Session 2026-01-04
+
+- **Q**: How should chain ID validation be implemented to maintain single source of truth? → **A**: Chain ID validation must import valid chains from `configService.getChainsConfig()` rather than hardcoding chain list, ensuring validation always matches actual configuration
+- **Q**: Should balance query methods be consolidated to reduce code duplication? → **A**: Yes, implement unified `getBalance(tokenAddress, tokenType)` private method that consolidates duplicate logic for `getBalanceBase` and `getBalanceQuote`, with both public methods delegating to this shared implementation
+- **Q**: What is the priority order for implementation steps in quickstart.md? → **A**: Pair discovery extension (Step 4) must be HIGH PRIORITY and implemented immediately after config update (Step 5), before adapter testing, to ensure aggregator routes are discovered correctly
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -146,6 +152,7 @@ The arbitrage bot recognizes OKX DEX as a venue on all supported chains (Ethereu
 - **FR-002**: System MUST install and integrate the official OKX DEX SDK from `github.com/okx/okx-dex-sdk`
 - **FR-003**: System MUST support OKX DEX price quoting via `estimateBuyQuoteToBase` and `estimateSellBaseToQuote` methods
 - **FR-004**: System MUST support balance queries via `getBalanceQuote` and `getBalanceBase` methods (higher priority than swap execution as it enables safe trade validation)
+- **FR-004-1**: System MUST implement balance queries using a unified private `getBalance(tokenAddress, tokenType)` method to consolidate duplicate logic and maintain DRY principle
 - **FR-005**: System MUST support OKX DEX swap execution via `swapQuoteToBase` and `swapBaseToQuote` methods (builds on balance validation)
 - **FR-006**: System MUST register OKX DEX adapter in the DexModule with provider token `DEX_OKX_DEX`
 - **FR-007**: System MUST allow OKX DEX to be configured on any supported chain (Ethereum, Arbitrum, Base, Polygon, BSC) via `config.yaml` by default when enabled in `aggregator-mulchain`

@@ -360,8 +360,10 @@ function isValidAmount(amount: string): boolean {
 #### 3. Chain ID Validation
 
 ```typescript
+// Import valid chains from config to maintain single source of truth
 function isValidChain(chainId: string): chainId is ChainId {
-    const validChains = ['ethereum', 'arbitrum', 'base', 'polygon', 'bsc'];
+    const chainsConfig = configService.getChainsConfig();
+    const validChains = Object.keys(chainsConfig) as ChainId[];
     return validChains.includes(chainId);
 }
 ```

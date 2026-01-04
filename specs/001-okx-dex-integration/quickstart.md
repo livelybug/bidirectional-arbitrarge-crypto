@@ -379,17 +379,29 @@ export class OkxDexService implements DexAdapter {
     }
 
     async getBalanceQuote(quoteToken: string): Promise<string> {
+        return this.getBalance(quoteToken, 'quote');
+    }
+
+    async getBalanceBase(baseToken: string): Promise<string> {
+        return this.getBalance(baseToken, 'base');
+    }
+
+    /**
+     * Unified balance query method
+     * Consolidates duplicate logic for base and quote token balance queries
+     */
+    private async getBalance(tokenAddress: string, tokenType: 'base' | 'quote'): Promise<string> {
         const provider = this.walletService.getProvider(this.chain);
         const address = this.walletService.getAddress();
 
         try {
             // Native token (ETH, BNB, MATIC, etc.)
-            if (quoteToken === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+            if (tokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
                 const balance = await provider.getBalance(address);
-                this.logger.debug('okx-balance-quote-native', {
+                this.logger.debug(`okx-balance-${tokenType}-native`, {
                     aggregator: 'okx',
                     chain: this.chain,
-                    quoteToken,
+                    tokenAddress,
                     balance: balance.toString(),
                 });
                 return balance.toString();
@@ -397,16 +409,16 @@ export class OkxDexService implements DexAdapter {
 
             // ERC-20 token
             const tokenContract = new ethers.Contract(
-                quoteToken,
+                tokenAddress,
                 ['function balanceOf(address) view returns (uint256)'],
                 provider,
             );
             const balance = await tokenContract.balanceOf(address);
 
-            this.logger.debug('okx-balance-quote-erc20', {
+            this.logger.debug(`okx-balance-${tokenType}-erc20`, {
                 aggregator: 'okx',
                 chain: this.chain,
-                quoteToken,
+                tokenAddress,
                 balance: balance.toString(),
             });
 
@@ -415,51 +427,8 @@ export class OkxDexService implements DexAdapter {
             this.logger.error('okx-balance-error', {
                 aggregator: 'okx',
                 chain: this.chain,
-                quoteToken,
-                error: error.message,
-            });
-            return '0';  // Safe default on error
-        }
-    }
-
-    async getBalanceBase(baseToken: string): Promise<string> {
-        const provider = this.walletService.getProvider(this.chain);
-        const address = this.walletService.getAddress();
-
-        try {
-            // Native token
-            if (baseToken === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
-                const balance = await provider.getBalance(address);
-                this.logger.debug('okx-balance-base-native', {
-                    aggregator: 'okx',
-                    chain: this.chain,
-                    baseToken,
-                    balance: balance.toString(),
-                });
-                return balance.toString();
-            }
-
-            // ERC-20 token
-            const tokenContract = new ethers.Contract(
-                baseToken,
-                ['function balanceOf(address) view returns (uint256)'],
-                provider,
-            );
-            const balance = await tokenContract.balanceOf(address);
-
-            this.logger.debug('okx-balance-base-erc20', {
-                aggregator: 'okx',
-                chain: this.chain,
-                baseToken,
-                balance: balance.toString(),
-            });
-
-            return balance.toString();
-        } catch (error: any) {
-            this.logger.error('okx-balance-error', {
-                aggregator: 'okx',
-                chain: this.chain,
-                baseToken,
+                tokenAddress,
+                tokenType,
                 error: error.message,
             });
             return '0';  // Safe default on error
@@ -664,6 +633,25 @@ Add aggregator enumeration logic (refer to docs/task/task-detail/T3b-Pair&route 
 
 ---
 
+## Step 4: Extend Pair Discovery for Aggregators (HIGH PRIORITY)
+
+**Priority**: This step MUST be completed before adapter testing to ensure aggregator routes are discovered correctly.
+
+### 4.1 Update `pair-discovery.helper.ts`
+
+**File**: `code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts`
+
+Add aggregator enumeration logic (refer to docs/task/task-detail/T3b-Pair&route discovery.md for full implementation).
+
+**Key Changes**:
+- Enumerate enabled aggregators from `config['aggregator-mulchain']`
+- Generate swap pairs for each aggregator on each chain where tokens exist
+- Check `chains.{chainId}.non-aggr` exclusion list before generating pairs
+- Support self-pairing for same-aggregator routes
+- Derive aggregator arbitrage pairs
+
+---
+
 ## Step 5: Update config.yaml
 
 Add OKX DEX aggregator to your configuration:
@@ -729,22 +717,62 @@ chains:
 
 ---
 
-## Step 6: Run Tests
+## Step 6: Register OKX Adapter in DexModule
 
-### 6.1 Run Unit Tests
+### 6.1 Update `dex.module.ts`
+
+**File**: `code/ts/src/dex/dex.module.ts`
+
+Add OKX DEX provider:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigService } from '../utils/config/config.service';
+import { LoggerService } from '../utils/logger/logger.service';
+import { WalletService } from '../wallet/wallet.service';
+import { UniswapV3Service } from './uniswap-v3.service';
+import { PancakeswapV3Service } from './pancakeswap-v3.service';
+import { VelodromeV2Service } from './velodrome-v2.service';
+import { OkxDexService } from './okx-dex.service';  // NEW
+
+@Module({
+    providers: [
+        UniswapV3Service,
+        PancakeswapV3Service,
+        VelodromeV2Service,
+        OkxDexService,  // NEW
+        ConfigService,
+        LoggerService,
+        WalletService,
+    ],
+    exports: [
+        UniswapV3Service,
+        PancakeswapV3Service,
+        VelodromeV2Service,
+        OkxDexService,  // NEW
+    ],
+})
+export class DexModule {}
+```
+
+---
+
+## Step 7: Run Tests
+
+### 7.1 Run Unit Tests
 
 ```bash
 cd code/ts
 pnpm test src/dex/okx-dex.service.spec.ts
 ```
 
-### 6.2 Run All Tests
+### 7.2 Run All Tests
 
 ```bash
 pnpm test
 ```
 
-### 6.3 Run Integration Tests
+### 7.3 Run Integration Tests
 
 ```bash
 pnpm test:test/dex/okx-dex.integration.spec.ts
@@ -752,16 +780,16 @@ pnpm test:test/dex/okx-dex.integration.spec.ts
 
 ---
 
-## Step 7: Test in Dry-Run Mode
+## Step 8: Test in Dry-Run Mode
 
-### 7.1 Start Bot in Dry-Run
+### 8.1 Start Bot in Dry-Run
 
 ```bash
 cd code/ts
 APP_ENV=dev pnpm run start:dev
 ```
 
-### 7.2 Verify Logs
+### 8.2 Verify Logs
 
 Look for OKX DEX logs:
 
