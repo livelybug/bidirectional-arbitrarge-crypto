@@ -56,19 +56,19 @@
 
 > **CONSTITUTION REQUIREMENT: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Write aggregator enumeration test in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts
-- [ ] T011 [P] [US1] Write aggregator swap pair generation test in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts
-- [ ] T012 [P] [US1] Write `non-aggr` exclusion logic test in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts
-- [ ] T013 [P] [US1] Write aggregator arbitrage pair derivation test in code/ts/src/orchestrator/pair-discovery/pair-discovery.service.spec.ts
+- [X] T010 [P] [US1] Write aggregator enumeration test in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts
+- [X] T011 [P] [US1] Write aggregator swap pair generation test in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts
+- [X] T012 [P] [US1] Write `non-aggr` exclusion logic test in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.spec.ts
+- [X] T013 [P] [US1] Write aggregator arbitrage pair derivation test in code/ts/src/orchestrator/pair-discovery/pair-discovery.service.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Implement `getEnabledAggregators()` helper in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts
-- [ ] T015 [P] [US1] Implement `generateAggregatorSwapPairs()` in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts
-- [ ] T016 [P] [US1] Implement `checkNonAggrExclusion()` helper in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts
-- [ ] T017 [US1] Extend `deriveArbitragePairs()` in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts to support aggregator self-pairing
-- [ ] T018 [US1] Update `discoverAllPairs()` in code/ts/src/orchestrator/pair-discovery/pair-discovery.service.ts to enumerate and include aggregators
-- [ ] T019 [US1] Add aggregator validation fail-fast logic to code/ts/src/orchestrator/pair-discovery/pair-discovery.service.ts
+- [X] T014 [P] [US1] Implement `getEnabledAggregators()` helper in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts
+- [X] T015 [P] [US1] Implement `generateAggregatorSwapPairs()` in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts
+- [X] T016 [P] [US1] Implement `checkNonAggrExclusion()` helper in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts
+- [X] T017 [US1] Extend `deriveArbitragePairs()` in code/ts/src/orchestrator/pair-discovery/pair-discovery.helper.ts to support aggregator self-pairing
+- [X] T018 [US1] Update `discoverAllPairs()` in code/ts/src/orchestrator/pair-discovery/pair-discovery.service.ts to enumerate and include aggregators
+- [X] T019 [US1] Add aggregator validation fail-fast logic to code/ts/src/orchestrator/pair-discovery/pair-discovery.service.ts
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - pair discovery includes OKX aggregator routes
 
