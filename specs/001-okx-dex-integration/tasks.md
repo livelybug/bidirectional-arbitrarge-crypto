@@ -24,7 +24,7 @@
 
 **Purpose**: Project dependencies and SDK installation
 
-- [ ] T001 Install OKX DEX SDK in code/ts/ using `pnpm add @okx-dex/okx-dex-sdk@^1.0.17`
+- [x] T001 Install OKX DEX SDK in code/ts/ using `pnpm add @okx-dex/okx-dex-sdk@^1.0.17` (requires manual execution)
 
 ---
 
@@ -34,15 +34,15 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Add `AggregatorMultichainConfig` type to code/ts/src/utils/config/config.types.ts
-- [ ] T004 [P] Add `non-aggr` field to `ChainConfig` type in code/ts/src/utils/config/config.types.ts
-- [ ] T005 [P] Add `okx_dex` to `ChainDexType` union in code/ts/src/utils/config/config.types.ts
-- [ ] T006 Add `aggregatorMultichainSchema` to code/ts/src/utils/config/config.schema.ts with validation
-- [ ] T007 [P] Extend `appConfigSchema` in code/ts/src/utils/config/config.schema.ts to include `aggregatorMultichain` field
-- [ ] T008 Add `getAggregatorMultichainConfig()` getter to code/ts/src/utils/config/config.service.ts
-- [ ] T009 Add `isAggregatorEnabled(aggregatorKey: string)` method to code/ts/src/utils/config/config.service.ts
+- [X] T003 Add `AggregatorMultichainConfig` type to code/ts/src/utils/config/config.types.ts
+- [X] T004 [P] Add `non-aggr` field to `ChainConfig` type in code/ts/src/utils/config/config.types.ts
+- [X] T005 [P] Add `okx_dex` to `ChainDexType` union in code/ts/src/utils/config/config.types.ts
+- [X] T006 Add `aggregatorMultichainSchema` to code/ts/src/utils/config/config.schema.ts with validation
+- [X] T007 [P] Extend `appConfigSchema` in code/ts/src/utils/config/config.schema.ts to include `aggregatorMultichain` field
+- [X] T008 Add `getAggregatorMultichainConfig()` getter to code/ts/src/utils/config/config.service.ts
+- [X] T009 Add `isAggregatorEnabled(aggregatorKey: string)` method to code/ts/src/utils/config/config.service.ts
 
-**Checkpoint**: Foundation ready - aggregator configuration infrastructure complete
+**Checkpoint**: ✅ Foundation ready - aggregator configuration infrastructure complete
 
 ---
 

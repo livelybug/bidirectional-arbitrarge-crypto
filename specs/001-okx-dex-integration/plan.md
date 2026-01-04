@@ -11,7 +11,7 @@ Integrate OKX DEX as a multi-chain aggregator venue into the arbitrage bot. OKX 
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x (Node.js v24+)
+**Language/Version**: TypeScript 5.x (Node.js v24+), pnpm 10.x
 **Primary Dependencies**:
 - Official OKX DEX SDK from `github.com/okx/okx-dex-sdk` (NEEDS CLARIFICATION: SDK availability, API structure, authentication method)
 - Existing NestJS framework modules (DexModule, ConfigService, LoggerService)
@@ -19,7 +19,7 @@ Integrate OKX DEX as a multi-chain aggregator venue into the arbitrage bot. OKX 
 
 **Storage**: N/A (stateless trading bot, in-memory pair discovery)
 **Testing**: Jest with TDD workflow (co-located `*.spec.ts`, integration tests in `test/`)
-**Target Platform**: Linux server (Node.js runtime)
+**Target Platform**: Linux server (Node.js runtime, pnpm 10.x version manager)
 **Project Type**: Single TypeScript project in `code/ts/`
 **Performance Goals**:
 - Price quotes: <5 seconds per OKX DEX API call

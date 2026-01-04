@@ -495,6 +495,7 @@ async swapQuoteToBase(...): Promise<DexSwapReceipt> {
 
 - **OKX DEX SDK Version**: `^1.0.17` (locked to minor version)
 - **Node.js Version**: `>=24.0.0` (per constitution)
+- **pnpm Version**: >=10.0
 - **TypeScript Version**: `^5.0.0` (strict mode enabled)
 
 ### Backward Compatibility
