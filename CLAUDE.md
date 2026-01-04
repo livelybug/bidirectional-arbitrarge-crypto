@@ -163,3 +163,10 @@ Custom DI tokens are defined in `src/common/tokens.ts`:
 - Uses `pnpm` as package manager
 - TypeScript with strict mode enabled (but some strictness options relaxed)
 - Uses ethers.js v6 for blockchain interactions
+
+## Active Technologies
+- TypeScript 5.x (Node.js v24+) (001-okx-dex-integration)
+- N/A (stateless trading bot, in-memory pair discovery) (001-okx-dex-integration)
+
+## Recent Changes
+- 001-okx-dex-integration: Added TypeScript 5.x (Node.js v24+)

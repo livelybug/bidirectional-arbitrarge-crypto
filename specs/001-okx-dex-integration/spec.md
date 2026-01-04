@@ -135,20 +135,21 @@ The arbitrage bot recognizes OKX DEX as a venue on all supported chains (Ethereu
 
 - **FR-000**: System MUST extend pair discovery to support multi-chain DEX aggregators via `aggregator-mulchain` configuration section in `config.yaml`
 - **FR-000-1**: System MUST enumerate aggregator keys (e.g., `okx`) from `config['aggregator-mulchain']` during discovery startup
-- **FR-000-2**: System MUST generate swap pairs for each aggregator on each chain where both base and quote tokens exist in `chains.{chainId}.tokenList`
+- **FR-000-2**: System MUST generate swap pairs for each aggregator on each chain where both base and quote tokens exist in `chains.{chainId}.tokenList`, UNLESS the aggregator is listed in that chain's `non-aggr` exclusion list
 - **FR-000-3**: System MUST allow self-pairing for aggregator swap pairs (same aggregator on same chain for both buy/sell legs) to capture price gaps from different underlying DEX pools
 - **FR-000-4**: System MUST derive aggregator arbitrage pairs in format `{base}~{quote}~{aggJ}+{chainM}~{aggK}+{chainN}` with deterministic ordering by `(baseToken, quoteToken, chainM, chainN, aggJ, aggK)`
 - **FR-000-5**: System MUST support aggregator credential configuration via environment variables (OKX_API_KEY, OKX_SECRET_KEY, OKX_API_PASSPHRASE, OKX_PROJECT_ID) without logging credential values
 - **FR-000-6**: System MUST treat aggregator keys lacking corresponding adapter mappings as configuration errors (fail-fast) rather than silently skipping
 - **FR-000-7**: System MUST integrate aggregator discovery with existing pair discovery service, reusing `TradingPairConfig` fields (`dexJ`, `dexK`) to store aggregator keys
+- **FR-000-8**: System MUST implement an opt-out configuration model where aggregators are globally enabled via `aggregator-mulchain.{aggregatorKey}.enabled: true` and supported on all chains by default unless explicitly excluded via `chains.{chainId}.non-aggr: [{excludedAggregatorKeys}]`
 - **FR-001**: System MUST implement a new DexAdapter called `OkxDexService` that conforms to the existing DexAdapter interface
 - **FR-002**: System MUST install and integrate the official OKX DEX SDK from `github.com/okx/okx-dex-sdk`
 - **FR-003**: System MUST support OKX DEX price quoting via `estimateBuyQuoteToBase` and `estimateSellBaseToQuote` methods
 - **FR-004**: System MUST support balance queries via `getBalanceQuote` and `getBalanceBase` methods (higher priority than swap execution as it enables safe trade validation)
 - **FR-005**: System MUST support OKX DEX swap execution via `swapQuoteToBase` and `swapBaseToQuote` methods (builds on balance validation)
 - **FR-006**: System MUST register OKX DEX adapter in the DexModule with provider token `DEX_OKX_DEX`
-- **FR-007**: System MUST allow OKX DEX to be configured on any supported chain (Ethereum, Arbitrum, Base, Polygon, BSC) via `config.yaml`
-- **FR-008**: System MUST resolve the correct chain for OKX DEX adapter by scanning `chains.*.dexList` for the `okx_dex` key
+- **FR-007**: System MUST allow OKX DEX to be configured on any supported chain (Ethereum, Arbitrum, Base, Polygon, BSC) via `config.yaml` by default when enabled in `aggregator-mulchain`
+- **FR-008**: System MUST allow specific chains to exclude OKX DEX via `chains.{chainId}.non-aggr: ['okx']` configuration when needed
 - **FR-009**: System MUST include OKX DEX in pair discovery when configured on a chain with both base and quote tokens
 - **FR-010**: System MUST handle OKX DEX API errors gracefully without crashing the orchestrator loop
 - **FR-011**: System MUST log all OKX DEX operations (quotes, swaps, balance queries) with structured JSON logging
@@ -167,7 +168,7 @@ The arbitrage bot recognizes OKX DEX as a venue on all supported chains (Ethereu
 
 - **Aggregator Swap Pair**: Represents a trading venue for a token pair on a specific chain via an aggregator (e.g., OKX DEX). Key attributes: `swapPairId` (format: `{base}~{quote}~{aggregator}~{chainId}`), base token, quote token, aggregator key (e.g., `okx`), chain ID
 - **Aggregator Arbitrage Pair**: Derived from two aggregator swap pairs for the same token pair, enabling arbitrage routes between aggregators or between aggregators and traditional DEXs. Key attributes: `arbitrargePairId`, `swapPair1` (entry leg), `swapPair2` (exit leg). Maps to `TradingPairConfig` with `dexJ/dexK` fields storing aggregator keys
-- **Multi-Chain Aggregator Configuration**: Configuration in `config.yaml` under `aggregator-mulchain` section defining enabled aggregators and their credential sources. Example: `{ okx: { enabled: true } }`. Credentials sourced from environment variables (OKX_API_KEY, OKX_SECRET_KEY, etc.)
+- **Multi-Chain Aggregator Configuration**: Configuration in `config.yaml` under `aggregator-mulchain` section defining enabled aggregators (opt-out model). Example: `{ okx: { enabled: true } }`. Aggregators are supported on all chains by default unless explicitly excluded via `chains.{chainId}.non-aggr: ['okx']`. Credentials sourced from environment variables (OKX_API_KEY, OKX_SECRET_KEY, etc.)
 - **OKX DEX Adapter**: A DexAdapter implementation that wraps the OKX DEX SDK, providing quoting, balance query, and swapping capabilities. Key attributes: chain ID, aggregator key (`okx`), SDK client instance, configuration service reference, logger instance. Balance query methods (`getBalanceQuote`, `getBalanceBase`) are implemented before swap methods to enable pre-execution validation
 - **OKX DEX Quote Response**: Raw response from OKX DEX SDK containing output amount, price, route information (if available), and estimated gas. Must be normalized to standard adapter interfaces
 - **OKX DEX Balance Response**: Response from OKX DEX SDK containing wallet balance information for a specific token. Must be normalized to string format matching other DEX adapters. Critical for validating sufficient capital before executing swaps
@@ -205,8 +206,10 @@ The arbitrage bot recognizes OKX DEX as a venue on all supported chains (Ethereu
 12. Aggregator self-pairing (same aggregator on same chain for both legs) will produce meaningful price differences due to routing across different underlying DEX pools
 13. Aggregator credentials (API keys, secrets) can be sourced from environment variables and are not required to be stored in config.yaml
 14. The `TradingPairConfig` data structure's `dexJ/dexK` fields can safely store aggregator keys (e.g., `okx`) alongside traditional DEX keys (e.g., `uniswap_v3`)
-15. Pair discovery algorithm's deterministic sorting can accommodate aggregator keys without changing existing ordering logic
-16. Balance query operations can be executed independently from swap operations and do not require transaction signing, making them safer to implement and test first
+15. Aggregators follow an opt-out configuration model: when enabled globally via `aggregator-mulchain.{aggregatorKey}.enabled: true`, they are supported on all chains by default unless explicitly excluded via `chains.{chainId}.non-aggr: [{excludedAggregatorKeys}]`
+16. The `non-aggr` exclusion list allows per-chain opt-out from specific aggregators without requiring changes to the aggregator's global configuration
+17. Pair discovery algorithm's deterministic sorting can accommodate aggregator keys without changing existing ordering logic
+18. Balance query operations can be executed independently from swap operations and do not require transaction signing, making them safer to implement and test first
 
 ## Dependencies & Prerequisites
 
