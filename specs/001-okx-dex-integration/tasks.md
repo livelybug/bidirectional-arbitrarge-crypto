@@ -84,20 +84,20 @@
 
 > **CONSTITUTION REQUIREMENT: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T020 [P] [US2] Write `estimateBuyQuoteToBase` test in code/ts/src/dex/okx-dex.service.spec.ts (normal, timeout, unsupported pair)
-- [ ] T021 [P] [US2] Write `estimateSellBaseToQuote` test in code/ts/src/dex/okx-dex.service.spec.ts (normal, high slippage, rate limit)
-- [ ] T022 [P] [US2] Write quote response validation test in code/ts/src/dex/okx-dex.service.spec.ts
+- [X] T020 [P] [US2] Write `estimateBuyQuoteToBase` test in code/ts/src/dex/okx-dex.service.spec.ts (normal, timeout, unsupported pair)
+- [X] T021 [P] [US2] Write `estimateSellBaseToQuote` test in code/ts/src/dex/okx-dex.service.spec.ts (normal, high slippage, rate limit)
+- [X] T022 [P] [US2] Write quote response validation test in code/ts/src/dex/okx-dex.service.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Create OKX DEX adapter skeleton in code/ts/src/dex/okx-dex.service.ts implementing DexAdapter interface
-- [ ] T024 [US2] Implement `validateCredentials()` private method in code/ts/src/dex/okx-dex.service.ts
-- [ ] T025 [US2] Implement `initializeClient()` private method in code/ts/src/dex/okx-dex.service.ts
-- [ ] T026 [US2] Implement `mapChainId()` helper in code/ts/src/dex/okx-dex.service.ts for chain ID mapping
-- [ ] T027 [US2] Implement `estimateBuyQuoteToBase()` method in code/ts/src/dex/okx-dex.service.ts with OKX SDK call
-- [ ] T028 [US2] Implement `estimateSellBaseToQuote()` method in code/ts/src/dex/okx-dex.service.ts with OKX SDK call
-- [ ] T029 [US2] Add structured JSON logging for quote operations in code/ts/src/dex/okx-dex.service.ts
-- [ ] T030 [US2] Add error handling and retry logic for quote methods in code/ts/src/dex/okx-dex.service.ts
+- [X] T023 [P] [US2] Create OKX DEX adapter skeleton in code/ts/src/dex/okx-dex.service.ts implementing DexAdapter interface
+- [X] T024 [US2] Implement `validateCredentials()` private method in code/ts/src/dex/okx-dex.service.ts
+- [X] T025 [US2] Implement `initializeClient()` private method in code/ts/src/dex/okx-dex.service.ts
+- [X] T026 [US2] Implement `mapChainId()` helper in code/ts/src/dex/okx-dex.service.ts for chain ID mapping
+- [X] T027 [US2] Implement `estimateBuyQuoteToBase()` method in code/ts/src/dex/okx-dex.service.ts with OKX SDK call
+- [X] T028 [US2] Implement `estimateSellBaseToQuote()` method in code/ts/src/dex/okx-dex.service.ts with OKX SDK call
+- [X] T029 [US2] Add structured JSON logging for quote operations in code/ts/src/dex/okx-dex.service.ts
+- [X] T030 [US2] Add error handling and retry logic for quote methods in code/ts/src/dex/okx-dex.service.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - OKX aggregator discovered and providing quotes
 
