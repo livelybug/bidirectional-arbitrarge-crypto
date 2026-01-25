@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## Core Principle
+
+**All code and documents must be very concise!!!**
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Developer Docs

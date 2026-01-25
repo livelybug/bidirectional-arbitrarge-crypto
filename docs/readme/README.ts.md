@@ -254,6 +254,10 @@ pnpm test:e2e
 
 # Coverage report
 pnpm test:cov
+
+# Run single test file (full path from project root)
+pnpm run test src/path/to/service.spec.ts
+
 ```
 
 ### Run the orchestrator
