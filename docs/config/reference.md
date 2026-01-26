@@ -3,6 +3,16 @@
 Complete `config.yaml` structure with inline comments.
 
 ```yaml
+# Multi-chain aggregator configuration (PRIMARY venue provider)
+# When enabled, native DEX discovery is disabled; aggregators provide unified liquidity across chains
+aggregatorMultichain:
+  okx:
+    enabled: true                      # Enable OKX aggregator
+  # Add more aggregators here as needed
+  # Example:
+  # kyber:
+  #   enabled: false
+
 # Global token symbols used to build trading pairs
 tokens:
   base:
@@ -30,87 +40,6 @@ chains:
         type: generic_v3
     # Optional: Exclude specific aggregators on this chain
     # nonAggr: ['okx']               # Example: exclude OKX on Arbitrum
-
-  # Base
-  base:
-    rpc: ${BASE_RPC}
-    tokenList:
-      - symbol: USDT
-        address: "0x..."
-      - symbol: WIF
-        address: "0x..."
-    dexList:
-      - key: uniswap_v3
-        type: uniswap_v3
-
-  # Ethereum (mainnet)
-  ethereum:
-    rpc: ${ETHEREUM_RPC}
-    tokenList:
-      - symbol: USDC
-        address: "0x..."              # USDC on Ethereum
-      - symbol: PEPE
-        address: "0x..."
-    dexList:
-      - key: uniswap_v3
-        type: uniswap_v3
-
-  # Polygon
-  polygon:
-    rpc: ${POLYGON_RPC}
-    tokenList:
-      - symbol: USDC
-        address: "0x..."
-      - symbol: PEPE
-        address: "0x..."
-    dexList:
-      - key: quickswap                 # QuickSwap on Polygon
-        type: generic_v2
-
-  # Binance Smart Chain
-  bsc:
-    rpc: ${BSC_RPC}
-    tokenList:
-      - symbol: USDT
-        address: "0x..."
-      - symbol: WIF
-        address: "0x..."
-    dexList:
-      - key: pancakeswap_v3             # PancakeSwap V3
-        type: generic_v3
-
-# Multi-chain aggregator configuration (PRIMARY venue provider)
-# When enabled, native DEX discovery is disabled; aggregators provide unified liquidity across chains
-aggregatorMultichain:
-  okx:
-    enabled: true                      # Enable OKX aggregator
-  # Add more aggregators here as needed
-  # Example:
-  # binance:
-  #   enabled: false
-  base:
-    - WIF      # dogwifhat
-    - PEPE     # pepe token
-    - BRETT    # Brett token
-  quote:
-    - USDT     # Tether USD
-    # - USDC   # Future: USD Coin
-
-# Per-chain configuration
-chains:
-  # Arbitrum
-  arbitrum:
-    rpc: ${ARBITRUM_RPC}              # JSON-RPC endpoint (inject from .env)
-    tokenList:
-      - symbol: USDT
-        address: "0x..."              # Contract address on Arbitrum
-      - symbol: WIF
-        address: "0x..."
-    dexList:
-      - key: uniswap_v3               # Unique DEX key
-        type: uniswap_v3              # Adapter type
-      - key: camelot_v3
-        type: generic_v3
 
   # Base
   base:
