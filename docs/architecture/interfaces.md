@@ -7,7 +7,7 @@ Core type definitions for the arbitrage system.
 ```typescript
 export type PairId = string;  // Format: `${baseToken}~${quoteToken}~${dexJ}+${chainM}~${dexK}+${chainN}`
 export type Direction = 'forward' | 'backward';
-export type ChainId = 'arbitrum' | 'base' | 'optimism' | 'ethereum' | 'polygon' | 'bsc';
+export type ChainId = 'arbitrum' | 'base' | 'optimism' | 'ethereum' | 'polygon' | 'bsc' | 'monad';
 ```
 
 ## Trading Pair Configuration

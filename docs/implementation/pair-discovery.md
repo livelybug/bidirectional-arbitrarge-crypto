@@ -116,6 +116,14 @@ arbitrargePair = {
 }
 ```
 
+**Pair ID Format**: `base~quote~dexJ+chainM~dexK+chainN`
+- `base`: Base token symbol (e.g., WIF)
+- `quote`: Quote token symbol (e.g., USDT)
+- `dexJ`: DEX/aggregator key for entry venue (e.g., okx)
+- `chainM`: Chain ID for entry venue (e.g., arbitrum)
+- `dexK`: DEX/aggregator key for exit venue (e.g., okx)
+- `chainN`: Chain ID for exit venue (e.g., base)
+
 ### 5. Deterministic Ordering
 
 Sort `arbitrargePairs` by:

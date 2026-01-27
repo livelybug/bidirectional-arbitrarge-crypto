@@ -59,6 +59,7 @@ z.object({
 })
 ```
 - Currently only supports `stargate` provider
+- **To add a new bridge**: Modify `bridgeConfigSchema` to include the new bridge type (see [Adding a Bridge](../implementation/adding-bridge.md) for complete steps)
 
 **positionCapsSchema**
 ```typescript
@@ -94,9 +95,9 @@ z.object({
   gasUSD: z.number().min(0),
   slippageReserveBps: z.number().int().min(0).max(1000),
   totalFeeRateBps: z.number().int().min(0).max(5000).refine(
-    (val, ctx) => (val < (ctx.data.dexFeeBpsPerSwap * 2) ?
-      { message: 'totalFeeRateBps must be ≥ 2 * dexFeeBpsPerSwap' } :
-      val),
+    (val, ctx) => (val >= (ctx.data.dexFeeBpsPerSwap * 2) ?
+      val :
+      { message: 'totalFeeRateBps must be ≥ 2 * dexFeeBpsPerSwap (2 swaps per arbitrage)' }),
   ),
 })
 ```
@@ -105,7 +106,7 @@ z.object({
 - `bridgePctBps`: 0–1000 (0–10%)
 - `gasUSD`: ≥0 (estimated gas cost)
 - `slippageReserveBps`: 0–1000 (0–10%)
-- `totalFeeRateBps`: 0–5000; must be ≥ 2× `dexFeeBpsPerSwap`
+- `totalFeeRateBps`: 0–5000; must be ≥ 2× `dexFeeBpsPerSwap` (accounting for 2 swaps per arbitrage: buy on venue M, sell on venue N)
 
 **opsConfigSchema**
 ```typescript

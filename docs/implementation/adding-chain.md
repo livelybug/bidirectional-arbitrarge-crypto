@@ -23,7 +23,8 @@ export type ChainId =
   | 'ethereum'
   | 'polygon'
   | 'bsc'
-  | 'your_new_chain';  // ← Add your chain here
+  | 'monad'
+  | 'your_new_chain';                      // ← Add your chain here
 ```
 
 ### 2. Add Chain to Config

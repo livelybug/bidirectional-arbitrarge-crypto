@@ -103,7 +103,7 @@ risk:
   slippageBps: 300                      # 3% = maximum slippage per swap
   positionCaps:
     fullAmountMode: true                # Use full available amount (subject to caps)
-    singleTxCapPct: 1.0                 # 100% = no single-tx cap (can set 0.05–1.0)
+    singleTxCapPct: 1.0                 # 35% = no single-tx cap (can set 0.05–1.0)
     maxExposurePct: 0.95               # 95% = maximum total exposure
 
 # Fee model (all costs subtracted from profit)
@@ -142,7 +142,7 @@ wallets:
 Inject into `.env` (see `.env.example` for template):
 
 ### RPC Endpoints
-- `ARBITRUM_RPC`, `BASE_RPC`, `OPTIMISM_RPC`, `ETHEREUM_RPC`, `POLYGON_RPC`, `BSC_RPC`
+- `ARBITRUM_RPC`, `BASE_RPC`, `OPTIMISM_RPC`, `ETHEREUM_RPC`, `POLYGON_RPC`, `BSC_RPC`, `MONAD_RPC`
 
 ### Risk & Ops Overrides
 - `MIN_PROFIT_RATE_BPS`, `STOP_LOSS_PCT`, `SLIPPAGE_BPS`, `LOOP_INTERVAL_MS`

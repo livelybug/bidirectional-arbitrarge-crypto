@@ -192,6 +192,32 @@ bridge:
     endpoint: "https://your-bridge-api.com"  # ← API endpoint (if applicable)
 ```
 
+**⚠️ Important**: When adding a new bridge, you must also update the schema validation:
+
+**Location**: `src/utils/config/config.schema.ts`
+
+```typescript
+// Add new bridge configuration type
+const bridgeYourBridgeSchema: z.ZodType<YourBridgeConfig> = z.object({
+  router: z.string().startsWith('0x'),
+  // ... other bridge-specific fields
+});
+
+// Update bridgeConfigSchema to support the new provider
+export const bridgeConfigSchema: z.ZodType<BridgeConfig> = z.union([
+  z.object({
+    provider: z.literal('stargate'),
+    stargate: bridgeStargateSchema,
+  }),
+  z.object({
+    provider: z.literal('your_bridge'),  // ← Add your bridge provider
+    your_bridge: bridgeYourBridgeSchema,    // ← Add your bridge config schema
+  }),
+]);
+```
+
+This ensures the config validates correctly with your new bridge provider.
+
 **Environment Variables** (add to `.env` if needed):
 ```bash
 YOUR_BRIDGE_API_KEY=your_api_key
