@@ -21,12 +21,15 @@ Target stack: TypeScript (prod), parity with Python behavior (reference).
 - Fetches prices for a given trading pair (base/quote) on DEX J (chain M) and DEX K (chain N)
 - Delegates to `DexQuoteProvider` registry keyed by `(chainId, dexKey)`
 - Never talks to concrete adapters directly
+- Builds its quote registry from the DEX providers that are actually available at runtime
 - Prefers API/SDK; supports fallback/sanity checks
 
 ### DEX Adapters (`src/dex/`)
 - One adapter instance per (chain, dexKey): `UniswapV3Service`, `PancakeswapV3Service`, `VelodromeV2Service`, `OKXService`, etc.
-- Adapters registered in `DexModule` via `DEX_*` tokens
-- `DexQuoteProvider` registry uses these to resolve correct adapter for each `(chainId, dexKey)`
+- Adapters exposed from `DexModule` via `DEX_*` tokens
+- `ConfigService` loads merged runtime config from `config.yaml` plus optional `config.{APP_ENV}.yaml` overlay before DEX provider factories decide which adapters to instantiate
+- `DexModule` instantiates only configured DEX providers; unconfigured providers resolve to `null` and no adapter instance is created
+- `DexQuoteProvider` registry uses only the instantiated adapters to resolve the correct adapter for each `(chainId, dexKey)`
 - **Multi-chain aggregators** (e.g., OKX) serve as primary venue providers across chains
 - Native DEX adapters (Uniswap, PancakeSwap) used as fallback when no aggregators enabled
 - Responsibilities:
@@ -62,9 +65,11 @@ Target stack: TypeScript (prod), parity with Python behavior (reference).
 
 ## Data Flow
 
-1. **Startup**: Config → PairDiscovery → `TradingPairConfig[]` (in-memory)
-   - Aggregator mode: Use `aggregatorMultichain` keys as venue providers
-   - Native DEX mode: Use `chains.*.dexList` (only when no aggregators enabled)
+1. **Startup**: Config → conditional DEX provider instantiation → PairDiscovery → `TradingPairConfig[]` (in-memory)
+   - `ConfigService` merges `config.yaml` with optional `config.{APP_ENV}.yaml`
+   - `DexModule` provider factories check the merged config to decide which DEX adapters to instantiate
+    - Aggregator mode: Use `aggregatorMultichain` keys as venue providers
+    - Native DEX mode: Use `chains.*.dexList` (only when no aggregators enabled)
 2. **Each tick** (1s): Orchestrator → PriceMonitor → Dual venue prices
 3. **Evaluation**: Forward/backward profit calculation → RiskManager gating
 4. **Execution**: If plan selected → Venue M → Bridge → Venue N → Reconciliation
@@ -73,6 +78,6 @@ Target stack: TypeScript (prod), parity with Python behavior (reference).
 ## Key Design Principles
 
 - **Deterministic**: Same config always yields same discovery output
-- **Fail-fast**: Configuration errors surface at startup, not during loop
+- **Fail-fast**: Configuration errors for configured adapters surface at startup, not during loop
 - **Modular**: Components communicate via interfaces; easy to add new DEX/bridge/chain
 - **Testable**: All adapters and logic have unit tests with mocks

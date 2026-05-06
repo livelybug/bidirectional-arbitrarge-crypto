@@ -16,6 +16,8 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
     - A global list of base tokens (e.g., meme tokens like WIF, PEPE, BRETT),
     - A global list of quote tokens (e.g., USDT, USDC), and
     - Per-chain configuration describing which tokens and DEXes are available on each chain.
+- At startup, the system must load merged runtime configuration from `config.yaml` plus optional environment overlay files (for example `config.dev.yaml`, `config.test.yaml`, `config.prd.yaml`) before deciding which DEX adapter providers to instantiate.
+- Only DEX adapters enabled by the merged runtime configuration shall be instantiated; unconfigured adapters shall not be created.
 - Only token pairs that are listed on at least two distinct venues (same-chain or cross-chain combinations of `(Chain, DEX)`) are considered eligible for arbitrage.
 - Price fetching should be near real-time to ensure accuracy.
 - Loop interval: 1 second (configurable, default 1000 ms).
@@ -111,6 +113,8 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 - The system will be developed in TypeScript, converting the logic from an existing Python simulation.
 - The project will be structured into modular components as outlined below.
 - Reference implementation exists in Python; TypeScript is the target production language. Behavioral parity with the Python logic is required.
+- NestJS module composition remains code-defined, but DEX adapter provider instantiation is configuration-driven at startup.
+- The price-monitor quote registry must be built from the DEX adapters that are actually instantiated from runtime config.
 
 ### 3.2. Project File Structure
 ```
