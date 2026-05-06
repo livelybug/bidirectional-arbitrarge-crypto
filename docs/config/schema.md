@@ -27,13 +27,13 @@ z.object({
   dexList: z.array(z.object({
     key: z.string().min(1),
     type: z.string().min(1),
-  })),
+  })).optional(),
   nonAggr: z.array(z.string()).optional(), // Aggregator exclusion list
 })
 ```
 - `rpc`: Non-empty string (RPC endpoint URL)
 - `tokenList`: Array of `{symbol, address}` where address starts with `0x`
-- `dexList`: Array of `{key, type}` for available DEXes
+- `dexList`: Optional array of `{key, type}` for native DEXes. Aggregator-first mode does not require it.
 - `nonAggr`: Optional array of aggregator keys to exclude on this chain (e.g., `['okx']`)
 
 **chainsConfigSchema**
@@ -147,14 +147,26 @@ z.object({
 z.object({
   tokens: tokensConfigSchema,
   chains: chainsConfigSchema,
+  aggregatorMultichain: aggregatorMultichainSchema,
   bridge: bridgeConfigSchema,
   risk: riskConfigSchema,
   fees: feesConfigSchema,
   ops: opsConfigSchema,
   logging: loggingConfigSchema,
   wallets: walletsConfigSchema,
-})
+}).superRefine(/* cross-field: at least one aggregator must be enabled */)
 ```
+
+**Cross-field rules:**
+
+| Rule | Requirement |
+|---|---|
+| `aggregatorMultichain` presence | **required** |
+| `aggregatorMultichain` size | must define **at least one** aggregator |
+| `aggregatorMultichain` enablement | must have **at least one** `enabled: true` aggregator |
+| `chains.*.dexList` | optional |
+
+This is enforced via `aggregatorMultichainSchema` plus `appConfigSchema.superRefine`. Violating the enablement rule produces a Zod error at path `aggregatorMultichain`.
 
 ## Environment Variable Preprocessing
 
