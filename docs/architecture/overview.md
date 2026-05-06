@@ -21,15 +21,15 @@ Target stack: TypeScript (prod), parity with Python behavior (reference).
 - Fetches prices for a given trading pair (base/quote) on DEX J (chain M) and DEX K (chain N)
 - Delegates to `DexQuoteProvider` registry keyed by `(chainId, dexKey)`
 - Never talks to concrete adapters directly
-- Builds its quote registry from the DEX providers that are actually available at runtime
+- Builds its quote registry from the active adapter collection exposed by `DexModule`
 - Prefers API/SDK; supports fallback/sanity checks
 
 ### DEX Adapters (`src/dex/`)
 - One adapter instance per (chain, dexKey): `UniswapV3Service`, `PancakeswapV3Service`, `VelodromeV2Service`, `OKXService`, etc.
-- Adapters exposed from `DexModule` via `DEX_*` tokens
+- Adapters exposed from `DexModule` via a unified active adapter collection token
 - `ConfigService` loads merged runtime config from `config.yaml` plus optional `config.{APP_ENV}.yaml` overlay before DEX provider factories decide which adapters to instantiate
-- `DexModule` instantiates only configured DEX providers; unconfigured providers resolve to `null` and no adapter instance is created
-- `DexQuoteProvider` registry uses only the instantiated adapters to resolve the correct adapter for each `(chainId, dexKey)`
+- `DexModule` instantiates only configured DEX providers and exposes them as a strictly filtered collection
+- `PriceMonitorModule` consumes this active collection rather than hardcoded nullable DEX tokens
 - **Multi-chain aggregators** (e.g., OKX) serve as primary venue providers across chains
 - Native DEX adapters (Uniswap, PancakeSwap) used as fallback when no aggregators enabled
 - Responsibilities:

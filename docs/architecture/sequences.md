@@ -10,8 +10,8 @@ Key operational flows for the arbitrage system.
 1. Nest bootstraps modules declared in code
 2. `ConfigService` loads `config.yaml` and optional `config.{APP_ENV}.yaml`
 3. `DexModule` provider factories read the merged config to decide which DEX adapters to instantiate
-4. Only configured DEX adapters are created; unconfigured DEX tokens resolve to `null`
-5. `PriceMonitorModule` builds its quote-provider registry from the adapters that were actually instantiated
+4. Only configured DEX adapters are created and added to the `ACTIVE_DEX_ADAPTERS` collection
+5. `PriceMonitorModule` builds its quote-provider registry from this strictly configured collection
 
 **Flow** (aggregator-first):
 1. Discovery reads global token lists: `config.tokens.{base,quote}`
@@ -132,8 +132,10 @@ Key operational flows for the arbitrage system.
 2. **DexModule provider factories**: Decide which adapter providers to instantiate from merged runtime config
    - Native DEX adapters instantiate only when some `chains.*.dexList` advertises their `dexKey`
    - Aggregator adapters instantiate only when `aggregatorMultichain.*.enabled = true`
-3. **Configured DEX Adapters**: Each instantiated adapter resolves target chain from config and fast-fails on invalid config
+   - All instantiated adapters are exposed via a unified active collection token
+3. **PriceMonitorModule**: Builds its registry from the active adapter collection
+4. **Configured DEX Adapters**: Each instantiated adapter resolves target chain from config and fast-fails on invalid config
    - If a configured adapter cannot resolve its runtime chain or credentials, it throws immediately
-4. **PairDiscovery**: Runs discovery flow; throws on fast-fail A/B/C
+5. **PairDiscovery**: Runs discovery flow; throws on fast-fail A/B/C
 
 **Result**: If any check fails, process exits with clear error before loop starts.
