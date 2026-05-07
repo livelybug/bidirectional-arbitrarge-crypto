@@ -12,15 +12,13 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 
 #### 2.1.1. Price Monitoring
 - The system must continuously monitor and fetch the prices of specified token pairs (e.g., `TokenA/USDT`, `TokenB/USDT`, `TokenA/USDC`, `TokenB/USDC`) from configured trade venues. The primary venue model is multi-chain aggregators (for example OKX via `aggregatorMultichain`). Standalone native DEX venues remain optional and secondary.
-- The set of token pairs and arbitrage routes is not hard-coded in configuration; instead, the system derives them at startup from:
+- The set of token pairs and arbitrage routes must be derived from configuration rather than hard-coded, using:
     - A global list of base tokens (e.g., meme tokens like WIF, PEPE, BRETT),
     - A global list of quote tokens (e.g., USDT, USDC), and
-    - Per-chain configuration describing which tokens are available on each chain, plus optional standalone DEX listings when native DEX adapters are enabled.
-- At startup, the system must load merged runtime configuration from `config.yaml` plus optional environment overlay files (for example `config.dev.yaml`, `config.test.yaml`, `config.prd.yaml`) before deciding which venue adapter providers to instantiate.
-- `aggregatorMultichain` is mandatory and primary. Native DEX adapters are optional and only instantiated when advertised in `chains.*.dexList`.
-- The PriceMonitor quote registry must be built from this active adapter collection rather than filtering hardcoded nullable DEX tokens.
-- Price fetching should be near real-time to ensure accuracy.
-- Loop interval: 1 second (configurable, default 1000 ms).
+    - Per-chain availability for those tokens, plus optional standalone DEX listings when native DEX venues are enabled.
+- Price monitoring must remain near real-time to preserve opportunity detection accuracy, with a 1-second loop cadence by default (configurable).
+- `aggregatorMultichain` must remain the mandatory primary venue model, with optional native DEX support as a secondary route source.
+- Route discovery for this requirement is specified in [Core Sequences](../architecture/sequences.md).
 
 #### 2.1.2. Profit Calculation
 - The system must calculate the potential profit for both forward and backward arbitrage loops.
@@ -43,13 +41,9 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 #### 2.1.4. Trade Execution
 - The system shall trigger an arbitrage trade only if the calculated profit margin meets or exceeds a predefined threshold.
 - **Execution Threshold:** `profit_forward` or `profit_backward` >= **1.8%**.
-- The execution process for a forward arbitrage (M -> N) is as follows:
-    1. Buy Token A with USDT on DEX J.
-    2. Bridge Token A from its native chain to the chain of DEX K.
-    3. Sell Token A for USDT on DEX K.
-    4. Bridge USDT back to the original chain.
+- The execution sequence for forward arbitrage (M -> N) must include entry, bridging, exit, and capital return in that order; detailed flow is defined in [Core Sequences](../architecture/sequences.md#execute-forward-arbitrage-m--n).
 - Execution amount:
-    - Default: 200USDT execution using the chain’s “current available USDT”.
+    - Default: use the chain’s current available USDT, subject to configured caps.
     - Configurable caps:
         - Optional single-transaction cap (% of total funds).
         - Optional maximum total exposure cap (% of total funds).

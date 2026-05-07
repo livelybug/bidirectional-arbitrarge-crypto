@@ -194,6 +194,8 @@ On validation failure:
 - Process exits with clear error message and stack
 - No partial configs allowed
 
+Operator-facing error messages and step-by-step fixes are in [Fast-Fail Errors](fast-fail-errors.md).
+
 ### Error Messages
 
 Zod errors provide:

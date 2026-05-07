@@ -167,12 +167,6 @@ For environment-specific configs, place alongside `config.yaml`:
 
 Active via `APP_ENV` env var: `dev` (default), `test`, `prd`.
 
-## Fail-Fast Triggers
+## Startup Validation
 
-Startup fails immediately if:
-
-- `tokens.base` or `tokens.quote` is empty
-- Fewer than 2 chains configured
-- `aggregatorMultichain` is missing, empty, or has no enabled aggregators
-- Optional DEX key in `dexList` has no adapter
-- Token in `tokens.*` never appears in any `chains.*.tokenList`
+See [Fast-Fail Errors](fast-fail-errors.md) for the canonical startup validation rules.
