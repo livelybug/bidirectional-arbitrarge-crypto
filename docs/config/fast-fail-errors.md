@@ -7,10 +7,9 @@ All configuration errors that abort startup with clear messages and fixes.
 | Error Code | Full Message | Meaning | Fix |
 |-------------|---------------|----------|------|
 | **Fast-fail A** | `Config error (Fast-fail A): token symbol "${s}" is listed in tokens.* but never appears in any chains.*.tokenList` | Token in `tokens.base` or `tokens.quote` not found on any chain | Add the token to at least one `chains.*.tokenList` array, or remove it from `tokens.*` |
-| **Fast-fail B** | `Config error (Fast-fail B): no eligible swapPairs discovered; ensure tokens.* and chains.*.tokenList/dexList are configured consistently` | No chain has both base and quote tokens together | Ensure at least one chain includes both tokens in its `tokenList` and a DEX in `dexList` |
+| **Fast-fail B** | `Config error (Fast-fail B): no eligible swapPairs discovered; ensure tokens.* and chains.*.tokenList/dexList are configured consistently` | No chain has both base and quote tokens together on a venue that can actually serve the pair | Ensure at least one chain includes both tokens in its `tokenList` and that an enabled aggregator can serve the pair; optional standalone DEXes in `dexList` may supplement this |
 | **Fast-fail C** | `Config error (Fast-fail C): no arbitrargePairs discovered; ensure at least two venues share the same base/quote pair` | Pairs exist but never on ≥2 venues | Add a second chain/DEX combination that supports the same `(base, quote)` pair |
 | **Fast-fail D** | `Config error (Fast-fail D): aggregator '${aggKey}' is enabled but missing required credentials: ${missingKeys.join(', ')}` | Aggregator enabled but environment credentials missing (checked at Pair Discovery initialization and DEX adapter initialization) | Add missing env vars (e.g., `OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_API_PASSPHRASE`, `OKX_PROJECT_ID`) to `.env` |
-| **No chain advertises DEX** | `No chain advertises dex key ${dexKey}; update config.chains accordingly` | DEX adapter exists but no chain lists it in `dexList` | Add the `dexKey` to at least one `chains[chainId].dexList` entry |
 | **No chains configured** | `No chains configured; unable to initialize adapter for ${dexKey}` | `chains` object is empty or missing | Add at least one chain configuration with `rpc`, `tokenList`, `dexList` to `config.yaml` |
 
 ## Common Scenarios
@@ -40,20 +39,7 @@ chains:
         address: "0x..."
 ```
 
-### Scenario 2: Missing DEX reference
-
-**Error**: `No chain advertises dex key pancakeswap_v3`
-
-**Fix**:
-```yaml
-chains:
-  bsc:
-    dexList:
-      - key: pancakeswap_v3           # ← Ensure this key exists
-        type: generic_v3
-```
-
-### Scenario 3: Adding OKX aggregator without credentials
+### Scenario 2: Adding OKX aggregator without credentials
 
 **Error**: Fast-fail D for aggregator `okx`
 
@@ -73,7 +59,7 @@ aggregatorMultichain:
     enabled: true    # ← Ensure enabled if using OKX
 ```
 
-### Scenario 4: Per-chain aggregator exclusion (nonAggr)
+### Scenario 3: Per-chain aggregator exclusion (nonAggr)
 
 **Warning**: `Aggregator 'okx' in chains.arbitrum.non-aggr is not defined in aggregator-mulchain config`
 
@@ -117,17 +103,12 @@ aggregatorMultichain:
 - Throws Zod error if any field violates schema rules
 - Does NOT catch errors - Nest bootstrap fails immediately
 
-**DEX Adapters** (`src/dex/`):
-- Each adapter throws if `config.chains` does not advertise its `dexKey`
-- Example: `UniswapV3Service` scans `chains` for `uniswap_v3` in `dexList`
-
 ## Debugging Tips
 
 1. **Check exact error message** - Copy-paste from logs to match above table
-2. **Verify chain/DEX keys** - Ensure keys in `dexList` match adapter expectations
-3. **Check token coverage** - Run `pnpm config:print` and verify all `tokens.*` symbols appear in `chains.*.tokenList`
-4. **Review aggregator config** - If using OKX/other aggregators, verify enabled flag AND credentials
-5. **Check for typos** - Common: `pancakeswap_v3` vs `pancakeswap_v3`, `uniswap_v3` vs `uniswapV3`
+2. **Check token coverage** - Run `pnpm config:print` and verify all `tokens.*` symbols appear in `chains.*.tokenList`
+3. **Review aggregator config** - Verify `aggregatorMultichain` exists, has at least one enabled aggregator, and required credentials are present
+4. **Check for typos** - Common: `pancakeswap_v3` vs `pancakeswap_v3`, `uniswap_v3` vs `uniswapV3`
 
 ## Related Documentation
 

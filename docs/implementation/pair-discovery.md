@@ -3,7 +3,7 @@
 Converts global token lists and per-chain inventories into arbitrageable routes.
 
 **Primary mode**: Multi-chain DEX aggregator arbitrage (e.g., OKX)  
-**Fallback mode**: Native DEX-to-DEX arbitrage (only when no aggregators enabled)
+**Optional supplemental config**: Standalone native DEX venues may still be configured.
 
 ## Concept
 
@@ -15,7 +15,7 @@ Three data structures drive discovery:
 
 ## Multi-Chain Aggregator Discovery Flow (Primary)
 
-Used when `aggregatorMultichain` config has at least one enabled aggregator (e.g., OKX). Native DEX discovery is **disabled** in this mode.
+`aggregatorMultichain` is mandatory and must have at least one enabled aggregator (for example OKX). That enabled aggregator set is the source of swap-pair generation. Standalone native DEX entries in `chains.*.dexList` are optional adapter advertisements and are not currently used to generate discovered routes.
 
 ### 1. Enumerate Symbol Pairs
 
@@ -164,9 +164,9 @@ See [Adding Aggregators](adding-dex.md) for integration details.
 
 ---
 
-## Native DEX Discovery (Fallback)
+## Standalone Native DEX Config (Optional)
 
-**Only used when no aggregators are enabled.** When any aggregator is enabled, native DEX discovery is skipped.
+Standalone native DEX entries in `chains.*.dexList` are optional. They may be used by native DEX adapters, but they are not a startup prerequisite and are not currently included in discovered routes.
 
 ### 1. Enumerate Symbol Pairs
 
@@ -189,9 +189,9 @@ for (const base of sorted(config.tokens.base)) {
 // Result: WIF/USDT, WIF/USDC, PEPE/USDT, PEPE/USDC
 ```
 
-### 2. Generate Swap Pairs Per Chain (Native DEX)
+### 2. Reference Native DEX Swap-Pair Logic
 
-For each chain (sorted by id), find venues supporting each `symbolPair`:
+If native DEX route generation is ever re-enabled, the standalone native venue logic would look like this:
 
 ```javascript
 const swapPairs = [];
@@ -204,7 +204,7 @@ for (const chainId of sorted(Object.keys(config.chains))) {
     const hasQuote = chain.tokenList.some(t => t.symbol === symbolPair.quote);
 
     if (hasBase && hasQuote) {
-      for (const dex of chain.dexList) {
+      for (const dex of chain.dexList ?? []) {
         swapPairs.push({
           swapPairId: `${symbolPair.base}~${symbolPair.quote}~${dex.key}~${chainId}`,
           base: symbolPair.base,
@@ -294,10 +294,10 @@ Discovery throws on startup if:
 | Rule | Error | Fix |
 |-------|--------|------|
 | **Fast-fail A** | Token in `tokens.*` never appears in any `chains.*.tokenList` | Add token to at least one chain's `tokenList` or remove from `tokens.*` |
-| **Fast-fail B** | No `swapPairs` discovered | Ensure at least one chain has both tokens in `tokenList` and a DEX/aggregator enabled |
+| **Fast-fail B** | No `swapPairs` discovered | Ensure at least one chain has both tokens in `tokenList` and at least one enabled aggregator can serve that pair; standalone `dexList` entries are optional supplemental venues |
 | **Fast-fail C** | No `arbitrargePairs` discovered | Ensure at least two venues support the same `(base, quote)` pair |
 | **Fast-fail D** | Aggregator enabled but missing credentials | Add required env vars (e.g., `OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_API_PASSPHRASE`, `OKX_PROJECT_ID`) |
-| **Unsupported DEX** | DEX key in `dexList` but no adapter exists | Add adapter or remove DEX key from config |
+| **Unsupported DEX** | DEX key in optional `dexList` but no adapter exists | Add adapter or remove DEX key from config |
 
 ## Output
 
@@ -323,7 +323,7 @@ export interface TradingPairConfig {
 ]
 ```
 
-**Native DEX mode example**:
+**Standalone native DEX reference example**:
 ```
 [
   { id: 'WIF~USDT~uniswap_v3+arbitrum~uniswap_v3+base', baseToken: 'WIF', quoteToken: 'USDT', chainM: 'arbitrum', dexJ: 'uniswap_v3', chainN: 'base', dexK: 'uniswap_v3' },

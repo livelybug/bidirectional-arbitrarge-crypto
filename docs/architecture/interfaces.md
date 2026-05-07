@@ -18,9 +18,9 @@ export interface TradingPairConfig {
   baseToken: string;              // e.g., 'WIF', 'PEPE'
   quoteToken: string;             // e.g., 'USDT', 'USDC'
   chainM: ChainId;                // Entry chain (DEX J)
-  dexJ: string;                   // DEX key for venue M
+  dexJ: string;                   // Venue key for M (typically aggregator key such as 'okx'; standalone DEX keys optional)
   chainN: ChainId;                // Exit chain (DEX K)
-  dexK: string;                   // DEX key for venue N
+  dexK: string;                   // Venue key for N (typically aggregator key such as 'okx'; standalone DEX keys optional)
   minProfitRateBps?: number;      // Per-pair profit threshold override
   slippageBps?: number;           // Per-pair slippage cap override
   positionCaps?: Partial<PositionCaps>;  // Per-pair position cap override

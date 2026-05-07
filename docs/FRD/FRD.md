@@ -11,13 +11,13 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 ### 2.1. Core Arbitrage Logic
 
 #### 2.1.1. Price Monitoring
-- The system must continuously monitor and fetch the prices of specified token pairs (e.g., `TokenA/USDT`, `TokenB/USDT`, `TokenA/USDC`, `TokenB/USDC`) from configured DEXs (e.g., DEX J, DEX K) that may reside on the same blockchain (same-chain DEX-to-DEX arbitrage) or on different blockchains (cross-chain arbitrage).
+- The system must continuously monitor and fetch the prices of specified token pairs (e.g., `TokenA/USDT`, `TokenB/USDT`, `TokenA/USDC`, `TokenB/USDC`) from configured trade venues. The primary venue model is multi-chain aggregators (for example OKX via `aggregatorMultichain`). Standalone native DEX venues remain optional and secondary.
 - The set of token pairs and arbitrage routes is not hard-coded in configuration; instead, the system derives them at startup from:
     - A global list of base tokens (e.g., meme tokens like WIF, PEPE, BRETT),
     - A global list of quote tokens (e.g., USDT, USDC), and
-    - Per-chain configuration describing which tokens and DEXes are available on each chain.
-- At startup, the system must load merged runtime configuration from `config.yaml` plus optional environment overlay files (for example `config.dev.yaml`, `config.test.yaml`, `config.prd.yaml`) before deciding which DEX adapter providers to instantiate.
-- Only DEX adapters enabled by the merged runtime configuration shall be instantiated; these active adapters are exposed as a filtered collection.
+    - Per-chain configuration describing which tokens are available on each chain, plus optional standalone DEX listings when native DEX adapters are enabled.
+- At startup, the system must load merged runtime configuration from `config.yaml` plus optional environment overlay files (for example `config.dev.yaml`, `config.test.yaml`, `config.prd.yaml`) before deciding which venue adapter providers to instantiate.
+- `aggregatorMultichain` is mandatory and primary. Native DEX adapters are optional and only instantiated when advertised in `chains.*.dexList`.
 - The PriceMonitor quote registry must be built from this active adapter collection rather than filtering hardcoded nullable DEX tokens.
 - Price fetching should be near real-time to ensure accuracy.
 - Loop interval: 1 second (configurable, default 1000 ms).
@@ -60,8 +60,8 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 
 ### 2.2. Supported Platforms
 
-- Each supported chain (e.g., Arbitrum, Base, Ethereum, Polygon) may host multiple supported DEXes (e.g., Uniswap V3, Camelot V3, Velodrome V2, QuickSwap, SushiSwap).
-- Arbitrage routes are defined as ordered pairs of venues `(Chain 1 (M), DEX J) → (Chain 2 (N), DEX K)`, where `Chain 1` and `Chain 2` may be the same or different.
+- Each supported chain (e.g., Arbitrum, Base, Ethereum, Polygon) participates in the mandatory multi-chain aggregator venue set and may also host optional standalone DEX adapters (e.g., Uniswap V3, Camelot V3, Velodrome V2, QuickSwap, SushiSwap).
+- Arbitrage routes are defined as ordered pairs of venues `(Chain 1 (M), DEX J) → (Chain 2 (N), DEX K)`, where `Chain 1` and `Chain 2` may be the same or different. In the current aggregator-first design, `DEX J` / `DEX K` are typically aggregator keys such as `okx`.
 
 | Chain 1 (M) | DEX J          | Chain 2 (N) | DEX K          | Cross-Chain Bridge      | Status      |
 |-------------|----------------|-------------|----------------|-------------------------|-------------|

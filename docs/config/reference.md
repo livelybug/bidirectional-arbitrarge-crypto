@@ -3,8 +3,9 @@
 Complete `config.yaml` structure with inline comments.
 
 ```yaml
-# Multi-chain aggregator configuration (PRIMARY venue provider)
-# When enabled, native DEX discovery is disabled; aggregators provide unified liquidity across chains
+# Multi-chain aggregator configuration (MANDATORY primary venue provider)
+# Must define at least one aggregator and at least one enabled aggregator.
+# Standalone native DEXes are optional supplemental venues configured via chains.*.dexList.
 aggregatorMultichain:
   okx:
     enabled: true                      # Enable OKX aggregator
@@ -33,7 +34,7 @@ chains:
         address: "0x..."              # Contract address on Arbitrum
       - symbol: WIF
         address: "0x..."
-    dexList:
+    dexList:                             # Optional standalone native DEXes on this chain
       - key: uniswap_v3               # Unique DEX key
         type: uniswap_v3              # Adapter type
       - key: camelot_v3
@@ -49,7 +50,7 @@ chains:
         address: "0x..."
       - symbol: WIF
         address: "0x..."
-    dexList:
+    dexList:                             # Optional standalone native DEXes on this chain
       - key: uniswap_v3
         type: uniswap_v3
 
@@ -61,7 +62,7 @@ chains:
         address: "0x..."              # USDC on Ethereum
       - symbol: PEPE
         address: "0x..."
-    dexList:
+    dexList:                             # Optional standalone native DEXes on this chain
       - key: uniswap_v3
         type: uniswap_v3
 
@@ -73,7 +74,7 @@ chains:
         address: "0x..."
       - symbol: PEPE
         address: "0x..."
-    dexList:
+    dexList:                             # Optional standalone native DEXes on this chain
       - key: quickswap                 # QuickSwap on Polygon
         type: generic_v2
 
@@ -85,7 +86,7 @@ chains:
         address: "0x..."
       - symbol: WIF
         address: "0x..."
-    dexList:
+    dexList:                             # Optional standalone native DEXes on this chain
       - key: pancakeswap_v3             # PancakeSwap V3
         type: generic_v3
 
@@ -172,6 +173,6 @@ Startup fails immediately if:
 
 - `tokens.base` or `tokens.quote` is empty
 - Fewer than 2 chains configured
-- First 2 chains lack `dexList` entries
-- DEX key in `dexList` has no adapter
+- `aggregatorMultichain` is missing, empty, or has no enabled aggregators
+- Optional DEX key in `dexList` has no adapter
 - Token in `tokens.*` never appears in any `chains.*.tokenList`

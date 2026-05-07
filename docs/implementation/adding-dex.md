@@ -1,10 +1,10 @@
 # Adding a DEX Adapter
 
-Integrate new decentralized exchange into the arbitrage system.
+Integrate a new standalone decentralized exchange adapter into the arbitrage system.
 
 ## Overview
 
-DEX adapters are modular components that implement `DexAdapter` interface. Each adapter:
+Standalone DEX adapters are modular components that implement `DexAdapter` interface. Each adapter:
 - Provides quote estimates for buying/selling base/quote tokens
 - Executes swaps with slippage caps
 - Queries wallet balances
@@ -168,7 +168,7 @@ chains:
         address: "0x..."            # Token address on this chain
       - symbol: WIF
         address: "0x..."
-    dexList:
+    dexList:                           # Optional
       - key: your_dex                    # Must match yourDexService.dexKey
         type: your_dex_type            # Type identifier (any string)
 ```
@@ -200,7 +200,7 @@ export type ChainId =
 **Test Coverage Required**:
 1. **Deterministic pricing**: Quote estimates return consistent values for same inputs
 2. **Input normalization**: Invalid amounts/slippage return safe defaults
-3. **Fail-fast on missing config**: Throws when `your_dex` not in `dexList`
+3. **Fail-fast on missing native DEX config**: Throws when `your_dex` is not advertised in `dexList`
 4. **Receipt structure**: Swap methods return objects with `txHash` field
 5. **Balance queries**: Return valid string representations
 
@@ -241,15 +241,14 @@ it('provides deterministic price and quote estimates', async () => {
 - `PriceMonitorService`: Uses `DexQuoteProvider` registry, not direct adapter references
 
 **Your DEX becomes available when**:
-1. `DexModule` registers it with `DEX_YOUR_DEX` token
-2. `config.yaml` includes `your_dex` key in at least one chain's `dexList`
-3. `PairDiscoveryService` generates routes with `dexJ` or `dexK` = `'your_dex'`
+1`config.yaml` includes `your_dex` key in at least one chain's `dexList`
+2`PairDiscoveryService` generates routes with `dexJ` or `dexK` = `'your_dex'`
 
 ## Aggregator DEXs
 
 For multi-chain aggregators (e.g., OKX, Binance):
 
-Same pattern applies:
+Aggregator integration is the primary path:
 - Create service with `dexKey = 'okx'` (or other aggregator key)
 - Add aggregator to `config.aggregatorMultichain`:
   ```yaml
@@ -258,7 +257,7 @@ Same pattern applies:
       enabled: true
   ```
 - Add credentials to `.env` (see [Fast-Fail Errors](../config/fast-fail-errors.md))
-- Pair discovery treats aggregator keys as valid `dexJ`/`dexK` values
+- Pair discovery treats aggregator keys as the default `dexJ`/`dexK` values
 
 ## Common Patterns
 
@@ -329,7 +328,7 @@ After implementation, verify:
 - [ ] Chain resolution throws on missing DEX key
 - [ ] Unit tests cover deterministic behavior, error handling
 - [ ] `DexModule` exports `DEX_YOUR_DEX` token
-- [ ] Config includes chain with `your_dex` in `dexList`
+- [ ] If using this standalone DEX, config includes chain with `your_dex` in `dexList`
 - [ ] `src/common/types.ts` includes new `ChainId`
 - [ ] Logs include `chain` and `dexKey` context
 - [ ] Test suite passes: `pnpm test src/dex/your-dex.service.spec.ts`
