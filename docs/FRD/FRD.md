@@ -4,7 +4,6 @@
 
 ### 1.1. Product Overview
 The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system designed to capitalize on price discrepancies of specific crypto assets across different decentralized exchanges (DEXs) on various blockchain networks. It performs bi-directional arbitrage by monitoring prices, calculating potential profits, and executing trades when profitable opportunities are identified, while incorporating risk management features.
-- The arbitrage loop executes on a 1-second cadence to capture near real-time price discrepancies.
 
 ## 2. Functional Requirements
 
@@ -54,7 +53,7 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 
 ### 2.2. Supported Platforms
 
-- Each supported chain (e.g., Arbitrum, Base, Ethereum, Polygon) participates in the mandatory multi-chain aggregator venue set and may also host optional standalone DEX adapters (e.g., Uniswap V3, Camelot V3, Velodrome V2, QuickSwap, SushiSwap).
+- Each supported chain participates in the mandatory multi-chain aggregator venue set and may also host optional standalone DEX adapters.
 - Arbitrage routes are defined as ordered pairs of venues `(Chain 1 (M), DEX J) → (Chain 2 (N), DEX K)`, where `Chain 1` and `Chain 2` may be the same or different. In the current aggregator-first design, `DEX J` / `DEX K` are typically aggregator keys such as `okx`.
 
 | Chain 1 (M) | DEX J          | Chain 2 (N) | DEX K          | Cross-Chain Bridge      | Status      |
@@ -104,32 +103,10 @@ The Cross-Chain Bi-Directional Arbitrage Bot is an automated trading system desi
 ## 3. System Architecture & Implementation
 
 ### 3.1. High-Level Structure
-- The system will be developed in TypeScript, converting the logic from an existing Python simulation.
-- The project will be structured into modular components as outlined below.
-- Reference implementation exists in Python; TypeScript is the target production language. Behavioral parity with the Python logic is required.
-- NestJS module composition remains code-defined, but DEX adapter provider instantiation and collection exposure are configuration-driven at startup.
-- The PriceMonitor quote registry must be built from the active adapter collection exposed by DexModule.
+- The system will be implemented in TypeScript with a modular structure; technical details are captured in [Architecture Overview](../architecture/overview.md).
 
 ### 3.2. Project File Structure
-```
-cross_chain_arb/
-├── config.yaml                 # Configuration file for chains, tokens, API keys, etc.
-├── wallets/                    # Directory for wallet private keys
-├── src/
-│   ├── main.ts                 # Main entry point for the arbitrage bot
-│   ├── dex/
-│   │   ├── uniswap_v3.ts       # Uniswap V3 interaction logic
-│   │   └── velodrome.ts        # Velodrome interaction logic
-│   ├── bridge/
-│   │   └── stargate.ts         # Stargate bridge interaction logic
-│   ├── price_monitor.ts        # Price fetching and monitoring module
-│   ├── risk_control.ts         # Risk management logic
-│   └── utils/
-│       ├── wallet.ts
-│       └── logger.ts
-├── logs/
-└── package.json
-```
+- See [Architecture Overview](../architecture/overview.md) for the current high-level project structure.
 
 ## 4. Non-Functional Requirements
 
