@@ -53,7 +53,10 @@ pnpm test:watch
 pnpm test:cov
 
 # Single test file (full path from project root)
+## unit tests: (or just pnpm test, it'll match properly since it's under src/)
 pnpm run test src/path/to/service.spec.ts
+## integration tests:  (because the test script ignores test/slow/ on purpose)
+pnpm exec jest test/slow/dex/okx-dex.integration.spec.ts --runInBand
 
 # E2E tests only
 pnpm test:e2e
